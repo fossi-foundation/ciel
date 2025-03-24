@@ -41,12 +41,12 @@ def mkdirp(path):
 # -- API Variables
 
 # -- PDK Root Management
-VOLARE_DEFAULT_HOME = os.path.join(os.path.expanduser("~"), ".volare")
+VOLARE_DEFAULT_HOME = os.path.join(os.path.expanduser("~"), ".ciel")
 VOLARE_RESOLVED_HOME = os.getenv("PDK_ROOT") or VOLARE_DEFAULT_HOME
 
 
 def _get_current_version(pdk_root: str, pdk: str) -> Optional[str]:
-    current_file = os.path.join(get_volare_dir(pdk_root, pdk), "current")
+    current_file = os.path.join(get_ciel_dir(pdk_root, pdk), "current")
     current_file_dir = os.path.dirname(current_file)
     mkdirp(current_file_dir)
     version = None
@@ -58,16 +58,16 @@ def _get_current_version(pdk_root: str, pdk: str) -> Optional[str]:
     return version
 
 
-def get_volare_home(pdk_root: Optional[str] = None) -> str:
+def get_ciel_home(pdk_root: Optional[str] = None) -> str:
     return pdk_root or VOLARE_RESOLVED_HOME
 
 
-def get_volare_dir(pdk_root: str, pdk: str) -> str:
-    return os.path.join(pdk_root, "volare", pdk)
+def get_ciel_dir(pdk_root: str, pdk: str) -> str:
+    return os.path.join(pdk_root, "ciel", pdk)
 
 
 def get_versions_dir(pdk_root: str, pdk: str) -> str:
-    return os.path.join(get_volare_dir(pdk_root, pdk), "versions")
+    return os.path.join(get_ciel_dir(pdk_root, pdk), "versions")
 
 
 @dataclass
@@ -106,7 +106,7 @@ class Version(object):
             except FileNotFoundError:
                 pass
 
-        current_file = os.path.join(get_volare_dir(pdk_root, self.pdk), "current")
+        current_file = os.path.join(get_ciel_dir(pdk_root, self.pdk), "current")
         os.unlink(current_file)
 
     def uninstall(self, pdk_root: str):

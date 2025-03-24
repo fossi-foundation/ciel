@@ -1,14 +1,14 @@
 name: Bug Report
-description: If Volare is not behaving as expected, please file a report here.
+description: If Ciel is not behaving as expected, please file a report here.
 body:
   - type: markdown
     attributes:
       value: |
-        Please note that this bug report is for issues with Volare itself, i.e.,
+        Please note that this bug report is for issues with Ciel itself, i.e.,
         not for issues with using the PDK.
 
-        Basically, if there are files, SCLs or similar missing, that's a Volare
-        issue. If the files have bad values, that is not a Volare issue.
+        Basically, if there are files, SCLs or similar missing, that's a Ciel
+        issue. If the files have bad values, that is not a Ciel issue.
 
         If you're having trouble using the PDK itself, kindly direct your issues
         to https://github.com/rtimothyedwards/open_pdks.
@@ -30,7 +30,7 @@ body:
     id: command
     attributes:
       label: Relevant command
-      description: Please copy and paste the relevant Volare command used.
+      description: Please copy and paste the relevant Ciel command used.
       render: shell-script
     validations:
       required: true

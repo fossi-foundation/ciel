@@ -26,7 +26,7 @@ from ..families import Family
 from ..github import ihp_repo
 from ..common import (
     Version,
-    get_volare_dir,
+    get_ciel_dir,
     mkdirp,
 )
 
@@ -132,7 +132,7 @@ def build(
         using_repos = {}
 
     build_directory = os.path.join(
-        get_volare_dir(pdk_root, "ihp_sg13g2"), "build", version
+        get_ciel_dir(pdk_root, "ihp_sg13g2"), "build", version
     )
     timestamp = datetime.now().strftime("build_ihp-sg13g2-%Y-%m-%d-%H-%M-%S")
     log_dir = os.path.join(build_directory, "logs", timestamp)

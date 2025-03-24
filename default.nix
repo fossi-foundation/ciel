@@ -24,7 +24,7 @@
   poetry-core,
 }:
 buildPythonPackage {
-  pname = "volare";
+  pname = "ciel";
   version = (builtins.fromTOML (builtins.readFile ./pyproject.toml)).tool.poetry.version;
   format = "pyproject";
 
@@ -49,9 +49,9 @@ buildPythonPackage {
     ++ httpx.optional-dependencies.socks;
 
   meta = {
-    mainProgram = "volare";
+    mainProgram = "ciel";
     description = "Version manager and builder for open-source PDKs";
-    homepage = "https://github.com/efabless/volare";
+    homepage = "https://github.com/donn/ciel";
     license = lib.licenses.asl20;
     platforms = lib.platforms.darwin ++ lib.platforms.linux;
   };

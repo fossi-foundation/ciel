@@ -160,7 +160,7 @@ def push(
         raise FileNotFoundError(f"Version {version} not found.")
 
     tempdir = tempfile.gettempdir()
-    tarball_directory = os.path.join(tempdir, "volare", f"{uuid.uuid4()}", version)
+    tarball_directory = os.path.join(tempdir, "ciel", f"{uuid.uuid4()}", version)
     mkdirp(tarball_directory)
 
     final_tarballs = []
@@ -200,7 +200,7 @@ def push(
     # If someone wants to rewrite this to not use ghr, please, by all means.
     console.log("Starting upload…")
 
-    body = f"{pdk} variants built using volare"
+    body = f"{pdk} variants built using ciel"
     date = get_commit_date(version, family.repo, session)
     if date is not None:
         body = f"{pdk} variants (released on {date_to_iso8601(date)})"

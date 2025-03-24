@@ -31,7 +31,7 @@ from .github import GitHubSession
 from .common import (
     Version,
     get_versions_dir,
-    get_volare_dir,
+    get_ciel_dir,
 )
 from .build import build, push
 from .families import Family
@@ -183,7 +183,7 @@ def fetch(
                 include_common=common_missing,
                 session=session,
             )
-            tarball_directory = tempfile.TemporaryDirectory(suffix=".volare")
+            tarball_directory = tempfile.TemporaryDirectory(suffix=".ciel")
             for name, link in release_link_list:
                 tarball_path = os.path.join(tarball_directory.name, name)
                 tarball_paths.append(tarball_path)
@@ -324,7 +324,7 @@ def enable(
         session=session,
     )
 
-    current_file = os.path.join(get_volare_dir(pdk_root, pdk), "current")
+    current_file = os.path.join(get_ciel_dir(pdk_root, pdk), "current")
     current_file_dir = os.path.dirname(current_file)
     mkdirp(current_file_dir)
 

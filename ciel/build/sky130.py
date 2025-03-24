@@ -14,6 +14,7 @@
 import os
 import io
 import json
+import venv
 import shlex
 import shutil
 import subprocess
@@ -31,7 +32,7 @@ from ..families import Family
 from ..github import opdks_repo
 from ..common import (
     Version,
-    get_volare_dir,
+    get_ciel_dir,
     mkdirp,
 )
 
@@ -66,7 +67,7 @@ def get_open_pdks(
         patch_open_pdks(repo_path)
 
         try:
-            json_raw = open(f"{repo_path}/gf180mcu/gf180mcu.json").read()
+            json_raw = open(f"{repo_path}/sky130/sky130.json").read()
             cpp = pcpp.Preprocessor()
             cpp.line_directive = None
             cpp.parse(json_raw)
@@ -94,19 +95,111 @@ def get_open_pdks(
         exit(-1)
 
 
+def build_sky130_timing(build_directory, sky130_path, log_dir, jobs=1):
+    try:
+        console = Console()
+        sky130_submodules = (
+            subprocess.check_output(
+                ["find", "./libraries", "-type", "d", "-name", "latest"],
+                stderr=subprocess.PIPE,
+                cwd=sky130_path,
+            )
+            .decode("utf8")
+            .strip()
+            .split("\n")
+        )
+
+        venv_path = os.path.join(build_directory, "venv")
+
+        with console.status("Building venv…"):
+            venv_builder = venv.EnvBuilder(with_pip=True)
+            venv_builder.create(venv_path)
+        console.log("Done building venv.")
+
+        with console.status("Installing python-skywater-pdk in venv…"), open(
+            f"{log_dir}/venv.log", "w"
+        ) as out:
+            subprocess.check_call(
+                [
+                    "bash",
+                    "-c",
+                    f"""
+                        set -e
+                        source {venv_path}/bin/activate
+                        python3 -m pip install wheel
+                        python3 -m pip install {os.path.join(sky130_path, 'scripts', 'python-skywater-pdk')}
+                    """,
+                ],
+                stdout=out,
+                stderr=out,
+            )
+        console.log("Done setting up venv.")
+
+        def do_submodule(submodule: str):
+            submodule_cleaned = submodule.strip("/.").replace("/", "_")
+            console.log(f"Generating timing files for {submodule}…")
+            with open(f"{log_dir}/timing.{submodule_cleaned}.log", "w") as out:
+                subprocess.check_call(
+                    [
+                        "bash",
+                        "-c",
+                        f"""
+                            set -e
+                            source {venv_path}/bin/activate
+                            cd {sky130_path}
+                            python3 -m skywater_pdk.liberty {submodule}
+                            python3 -m skywater_pdk.liberty {submodule} all
+                            python3 -m skywater_pdk.liberty {submodule} all --ccsnoise
+                        """,
+                    ],
+                    stdout=out,
+                    stderr=out,
+                )
+            console.log(f"Done with {submodule}.")
+
+        with ThreadPoolExecutor(max_workers=jobs) as executor:
+            for submodule in sky130_submodules:
+                submodule_path = os.path.join(sky130_path, submodule)
+                if (
+                    not os.path.exists(os.path.join(submodule_path, "cells"))
+                    or "_sc" not in submodule
+                ):
+                    continue
+                executor.submit(
+                    do_submodule,
+                    submodule,
+                )
+        console.log("Created timing data.")
+
+    except subprocess.CalledProcessError as e:
+        print(e)
+        print(e.stderr)
+        exit(-1)
+
+
 LIB_FLAG_MAP = {
-    "gf180mcu_fd_pr": "--enable-primitive-gf180mcu",
-    "gf180mcu_fd_sc_mcu7t5v0": "--enable-sc-7t5v0-gf180mcu",
-    "gf180mcu_fd_sc_mcu9t5v0": "--enable-sc-9t5v0-gf180mcu",
-    "gf180mcu_fd_io": "--enable-io-gf180mcu",
-    "gf180mcu_fd_ip_sram": "--enable-sram-gf180mcu",
-    "gf180mcu_osu_sc_gp12t3v3": "--enable-osu-sc-gf180mcu",
-    "gf180mcu_osu_sc_gp9t3v3": "--enable-osu-sc-gf180mcu",
+    "sky130_fd_io": "--enable-io-sky130",
+    "sky130_fd_pr": "--enable-primitive-sky130",
+    "sky130_ml_xx_hd": "--enable-alpha-sky130",
+    "sky130_fd_sc_hd": "--enable-sc-hd-sky130",
+    "sky130_fd_sc_hdll": "--enable-sc-hdll-sky130",
+    "sky130_fd_sc_lp": "--enable-sc-lp-sky130",
+    "sky130_fd_sc_hvl": "--enable-sc-hvl-sky130",
+    "sky130_fd_sc_ls": "--enable-sc-ls-sky130",
+    "sky130_fd_sc_ms": "--enable-sc-ms-sky130",
+    "sky130_fd_sc_hs": "--enable-sc-hs-sky130",
+    "sky130_sram_macros": "--enable-sram-sky130",
+    "sky130_fd_pr_reram": "--enable-reram-sky130",
 }
 
 
 def build_variants(
-    magic_bin, include_libraries, build_directory, open_pdks_path, log_dir, jobs=1
+    magic_bin,
+    build_directory,
+    open_pdks_path,
+    include_libraries,
+    log_dir,
+    jobs=1,
 ):
     try:
         pdk_root_abs = os.path.abspath(build_directory)
@@ -114,6 +207,9 @@ def build_variants(
 
         def run_sh(script, log_to):
             output_file = open(log_to, "w")
+            output_file.write(script + "\n")
+            output_file.write("---\n")
+            output_file.flush()
             try:
                 subprocess.check_call(
                     ["sh", "-c", script],
@@ -128,6 +224,7 @@ def build_variants(
                 )
                 raise e
 
+        magic_dirname = os.path.dirname(magic_bin)
         library_flags = set([LIB_FLAG_MAP[library] for library in include_libraries])
         library_flags_disable = set(
             [
@@ -136,9 +233,8 @@ def build_variants(
                 if library not in include_libraries
             ]
         )
-        magic_dirname = os.path.dirname(magic_bin)
 
-        configuration_flags = ["--enable-gf180mcu-pdk", "--with-reference"] + list(
+        configuration_flags = ["--enable-sky130-pdk", "--with-reference"] + list(
             library_flags.union(library_flags_disable)
         )
         console.log(f"Configuring with flags {shlex.join(configuration_flags)}")
@@ -166,6 +262,7 @@ def build_variants(
                 log_to=os.path.join(log_dir, "install.log"),
             )
         console.log("Built PDK variants.")
+
         with console.status("Cleaning build artifacts…"):
             run_sh(
                 """
@@ -184,10 +281,10 @@ def build_variants(
         exit(-1)
 
 
-def install_gf180mcu(build_directory, pdk_root, version):
+def install_sky130(build_directory, pdk_root, version):
     console = Console()
     with console.status("Adding build to list of installed versions…"):
-        version_directory = Version(version, "gf180mcu").get_dir(pdk_root)
+        version_directory = Version(version, "sky130").get_dir(pdk_root)
         if (
             os.path.exists(version_directory)
             and len(os.listdir(version_directory)) != 0
@@ -196,7 +293,7 @@ def install_gf180mcu(build_directory, pdk_root, version):
             it = 0
             while os.path.exists(backup_path) and len(os.listdir(backup_path)) != 0:
                 it += 1
-                backup_path = Version(f"{version}.bk{it}", "gf180mcu").get_dir(pdk_root)
+                backup_path = Version(f"{version}.bk{it}", version).get_dir(pdk_root)
             console.log(
                 f"Build already found at {version_directory}, moving to {backup_path}…"
             )
@@ -205,9 +302,9 @@ def install_gf180mcu(build_directory, pdk_root, version):
         console.log("Copying…")
         mkdirp(version_directory)
 
-        gf180mcu_family = Family.by_name["gf180mcu"]
+        sky130_family = Family.by_name["sky130"]
 
-        for variant in gf180mcu_family.variants:
+        for variant in sky130_family.variants:
             variant_build_path = os.path.join(build_directory, variant)
             variant_install_path = os.path.join(version_directory, variant)
             if os.path.isdir(variant_build_path):
@@ -224,16 +321,14 @@ def build(
     include_libraries: Optional[List[str]] = None,
     using_repos: Optional[Dict[str, str]] = None,
 ):
-    family = Family.by_name["gf180mcu"]
+    family = Family.by_name["sky130"]
     library_set = family.resolve_libraries(include_libraries)
 
     if using_repos is None:
         using_repos = {}
 
-    timestamp = datetime.now().strftime("build_gf180mcu-%Y-%m-%d-%H-%M-%S")
-    build_directory = os.path.join(
-        get_volare_dir(pdk_root, "gf180mcu"), "build", version
-    )
+    build_directory = os.path.join(get_ciel_dir(pdk_root, "sky130"), "build", version)
+    timestamp = datetime.now().strftime("build_sky130-%Y-%m-%d-%H-%M-%S")
     log_dir = os.path.join(build_directory, "logs", timestamp)
     mkdirp(log_dir)
 
@@ -251,13 +346,13 @@ def build(
 
     build_variants(
         magic_bin,
-        library_set,
         build_directory,
         open_pdks_path,
+        library_set,
         log_dir,
         jobs,
-    )
-    install_gf180mcu(build_directory, pdk_root, version)
+    ),
+    install_sky130(build_directory, pdk_root, version)
 
     if clear_build_artifacts:
         shutil.rmtree(build_directory)

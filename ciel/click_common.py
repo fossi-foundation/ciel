@@ -71,7 +71,7 @@ def opt_build(function: Callable):
         multiple=True,
         hidden=True,
         type=str,
-        help="Use this repository instead of cloning and checking out, in the format repo_name=/path/to/repo. You can pass it multiple times to replace multiple repos. This feature is intended for volare and PDK developers.",
+        help="Use this repository instead of cloning and checking out, in the format repo_name=/path/to/repo. You can pass it multiple times to replace multiple repos. This feature is intended for ciel and PDK developers.",
     )(function)
     return function
 
