@@ -13,7 +13,7 @@
 # limitations under the License.
 {
   inputs = {
-    nix-eda.url = github:efabless/nix-eda;
+    nix-eda.url = github:fossi-foundation/nix-eda;
   };
 
   outputs = {
@@ -28,7 +28,7 @@
       default = nix-eda.composePythonOverlay (pkgs': pkgs: pypkgs': pypkgs: let
         callPythonPackage = lib.callPackageWith (pkgs' // pkgs'.python3.pkgs);
       in {
-        volare = callPythonPackage ./default.nix {};
+        ciel = callPythonPackage ./default.nix {};
       });
     };
 
@@ -48,8 +48,8 @@
       system: let
         pkgs = self.legacyPackages."${system}";
       in {
-        inherit (pkgs.python3.pkgs) volare;
-        default = self.packages."${system}".volare;
+        inherit (pkgs.python3.pkgs) ciel;
+        default = self.packages."${system}".ciel;
       }
     );
   };

@@ -21,7 +21,7 @@ from rich.console import Console
 from .__version__ import __version__
 from .common import (
     Version,
-    get_volare_home,
+    get_ciel_home,
     resolve_version,
 )
 from .click_common import (
@@ -57,15 +57,11 @@ def output_cmd(pdk_root, pdk):
     if sys.stdout.isatty():
         if version is None:
             print(f"No version of the PDK {pdk} is currently enabled at {pdk_root}.")
-            print(
-                "Invoke volare --help for assistance installing and enabling versions."
-            )
+            print("Invoke ciel --help for assistance installing and enabling versions.")
             exit(1)
         else:
             print(f"Installed: {pdk} v{version.name}")
-            print(
-                "Invoke volare --help for assistance installing and enabling versions."
-            )
+            print("Invoke ciel --help for assistance installing and enabling versions.")
     else:
         if version is None:
             exit(1)
@@ -175,7 +171,7 @@ def list_remote_cmd(pdk_root, pdk):
 @click.argument("version", required=False)
 def path_cmd(pdk_root, pdk, version):
     """
-    Prints the path of the volare PDK root.
+    Prints the path of the ciel PDK root.
 
     If a version is provided over the commandline, it prints the path to this
     version instead.
@@ -184,7 +180,7 @@ def path_cmd(pdk_root, pdk, version):
         version = Version(version, pdk)
         print(version.get_dir(pdk_root), end="")
     else:
-        print(get_volare_home(pdk_root))
+        print(get_ciel_home(pdk_root))
 
 
 @click.command("enable")
@@ -270,7 +266,7 @@ def fetch_cmd(
     include_libraries,
 ):
     """
-    Fetches a PDK to Volare's store without setting it as the "enabled" version
+    Fetches a PDK to Ciel's store without setting it as the "enabled" version
     in ``PDK_ROOT``.
 
     Parameters: <version> (Optional)
@@ -380,7 +376,7 @@ def enable_or_build_cmd(
 @click.group()
 @click.version_option(
     __version__,
-    message="""Volare v%(version)s ©2022-2025 Efabless Corporation
+    message="""Ciel v%(version)s ©2022-2025 Efabless Corporation and Contributors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this program except in compliance with the License.
@@ -421,7 +417,7 @@ except ModuleNotFoundError as e:
         "Please install Python 3 with all (optional) dependencies using your operating system's package manager.",
         file=sys.stderr,
     )
-    print("This is a fatal error. Volare will now quit.", file=sys.stderr)
+    print("This is a fatal error. Ciel will now quit.", file=sys.stderr)
     exit(-1)
 
 

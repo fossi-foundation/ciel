@@ -20,20 +20,20 @@ from gh import gh
 
 sys.path.insert(0, os.getcwd())
 
-import volare  # noqa: E402
+import ciel  # noqa: E402
 
 print("Getting tags…")
 
 latest_tag = None
 latest_tag_commit = None
-tags = [pair[1] for pair in gh.volare.tags]
+tags = [pair[1] for pair in gh.ciel.tags]
 
-tag_exists = volare.__version__ in tags
+tag_exists = ciel.__version__ in tags
 
 if tag_exists:
     print("Tag already exists. Leaving NEW_TAG unaltered.")
 else:
-    new_tag = volare.__version__
+    new_tag = ciel.__version__
 
     print("Found new tag %s." % new_tag)
     gh.export_env("NEW_TAG", new_tag)

@@ -116,7 +116,7 @@ class GitHubSession(httpx.Client):
         except ValueError as e:
             if "Unknown scheme for proxy URL" in e.args[0] and "socks://" in e.args[0]:
                 print(
-                    f"Invalid SOCKS proxy: Volare only supports http://, https:// and socks5:// schemes: {e.args[0]}",
+                    f"Invalid SOCKS proxy: Ciel only supports http://, https:// and socks5:// schemes: {e.args[0]}",
                     file=sys.stderr,
                 )
                 exit(-1)
@@ -147,7 +147,7 @@ class GitHubSession(httpx.Client):
 
     @classmethod
     def get_user_agent(Self) -> str:
-        return f"volare/{__version__}"
+        return f"ciel/{__version__}"
 
 
 def get_commit_date(

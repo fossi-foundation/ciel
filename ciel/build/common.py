@@ -15,7 +15,7 @@ import os
 import shutil
 import subprocess
 
-from volare.github import GitHubSession
+from ciel.github import GitHubSession
 
 
 def open_pdks_fix_makefile(at_path: str):
@@ -63,7 +63,7 @@ def patch_open_pdks(at_path: str):
     )  # First one with --with-reference
     if not can_build:
         print(
-            f"Commit {head} cannot be built using Volare: the minimum version of open_pdks buildable with Volare is 1.0.381."
+            f"Commit {head} cannot be built using Ciel: the minimum version of open_pdks buildable with Ciel is 1.0.381."
         )
         exit(-1)
 
