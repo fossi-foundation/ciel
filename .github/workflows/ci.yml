@@ -50,7 +50,7 @@ jobs:
         uses: tvdias/github-tagger@v0.0.1
         with:
           tag: "${{ env.NEW_TAG }}"
-          repo-token: "${{ secrets.MY_TOKEN }}"
+          repo-token: "${{ secrets.BOT_TOKEN }}"
       - name: Publish
         if: ${{ env.NEW_TAG != 'NO_NEW_TAG' }}
         uses: pypa/gh-action-pypi-publish@master
