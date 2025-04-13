@@ -1,3 +1,7 @@
+# Copyright 2025 The American University in Cairo
+#
+# Adapted from the Volare project
+#
 # Copyright 2022-2023 Efabless Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +22,7 @@ from typing import Callable, Optional
 import click
 
 from .common import VOLARE_RESOLVED_HOME
-from .github import volare_repo, GitHubSession
+from .github import GitHubSession
 
 opt = partial(click.option, show_default=True)
 
@@ -77,12 +81,10 @@ def opt_build(function: Callable):
 
 
 def opt_push(function: Callable):
-    function = opt("-o", "--owner", default=volare_repo.owner, help="Repository Owner")(
+    function = opt("-o", "--owner", default="efabless", help="Repository Owner")(
         function
     )
-    function = opt("-r", "--repository", default=volare_repo.name, help="Repository")(
-        function
-    )
+    function = opt("-r", "--repository", default="volare", help="Repository")(function)
     function = opt(
         "--pre/--prod", default=False, help="Push as pre-release or production"
     )(function)

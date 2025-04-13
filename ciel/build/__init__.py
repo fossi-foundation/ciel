@@ -1,3 +1,7 @@
+# Copyright 2025 The American University in Cairo
+#
+# Adapted from the Volare project
+#
 # Copyright 2022-2023 Efabless Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,7 +32,6 @@ from rich.progress import Progress
 from ..github import (
     GitHubSession,
     get_commit_date,
-    volare_repo,
 )
 from ..common import (
     Version,
@@ -135,16 +138,14 @@ def push(
     pdk,
     version,
     *,
-    owner=volare_repo.owner,
-    repository=volare_repo.name,
+    owner,
+    repository,
     pre=False,
     push_libraries=None,
-    session: Optional[GitHubSession] = None,
 ):
     family = Family.by_name[pdk]
 
-    if session is None:
-        session = GitHubSession()
+    session = GitHubSession()
     if session.github_token is None:
         raise TypeError("No GitHub token was provided.")
 

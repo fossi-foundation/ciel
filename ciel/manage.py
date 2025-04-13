@@ -1,3 +1,7 @@
+# Copyright 2025 The American University in Cairo
+#
+# Modified from the Volare project
+#
 # Copyright 2022-2023 Efabless Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,6 +39,7 @@ from .common import (
 )
 from .build import build, push
 from .families import Family
+from .source import DataSource
 
 
 class VersionNotFound(Exception):
@@ -47,7 +52,6 @@ def print_installed_list(
     *,
     console: Console,
     installed_list: List[Version],
-    session: Optional[GitHubSession] = None,
 ):
     if len(installed_list) == 0:
         console.print("[red]No PDKs installed.")
@@ -56,8 +60,7 @@ def print_installed_list(
     versions = installed_list
 
     try:
-        all_remote_versions = Version._from_github(session)
-        remote_versions = all_remote_versions.get(pdk) or []
+        remote_versions = DataSource.default.get_available_versions(pdk)
         remote_version_dict = {rv.name: rv for rv in remote_versions}
         for installed in installed_list:
             remote_version = remote_version_dict.get(installed.name)
@@ -124,11 +127,7 @@ def fetch(
     push_kwargs: dict = {},
     include_libraries: Optional[Iterable[str]] = None,
     output: Union[Console, io.TextIOWrapper] = Console(),
-    session: Optional[GitHubSession] = None,
 ) -> Version:
-    if session is None:
-        session = GitHubSession()
-
     console = output
     if not isinstance(console, Console):
         console = Console(file=console)
@@ -178,16 +177,20 @@ def fetch(
 
         tarball_paths = []
         try:
-            release_link_list = version_object.get_release_links(
-                missing_libraries,
-                include_common=common_missing,
-                session=session,
+            client, assets = DataSource.default.get_downloads_for_version(
+                version_object
             )
+            assets_filtered = []
+            for asset in assets:
+                if asset.content == "common" and common_missing:
+                    assets_filtered.append(asset)
+                elif asset.content in missing_libraries:
+                    assets_filtered.append(asset)
             tarball_directory = tempfile.TemporaryDirectory(suffix=".ciel")
-            for name, link in release_link_list:
-                tarball_path = os.path.join(tarball_directory.name, name)
+            for asset in assets_filtered:
+                tarball_path = os.path.join(tarball_directory.name, asset.filename)
                 tarball_paths.append(tarball_path)
-                with session.stream("get", link) as r, rich.progress.Progress(
+                with client.stream("get", asset.url) as r, rich.progress.Progress(
                     console=console
                 ) as p:
                     total_str: Optional[str] = r.headers.get("Content-length", None)
@@ -195,7 +198,7 @@ def fetch(
                     if total_str is not None:
                         total_int = int(total_str)
                     task = p.add_task(
-                        f"Downloading {name}…",
+                        f"Downloading {asset.filename}…",
                         total=total_int,
                     )
                     r.raise_for_status()
@@ -204,7 +207,7 @@ def fetch(
                             p.advance(task, advance=len(chunk))
                             f.write(chunk)
 
-                with console.status(f"Unpacking {name}…"):
+                with console.status(f"Unpacking {asset.filename}…"):
                     stream = zstd.open(tarball_path, mode="rb")
                     with tarfile.TarFile(fileobj=stream, mode="r") as tf:
                         for file in tf:
@@ -216,7 +219,7 @@ def fetch(
                             io = tf.extractfile(file)
                             if io is None:
                                 raise IOError(
-                                    f"Failed to unpack file in {name}'s tarball: {file.name}."
+                                    f"Failed to unpack file in {asset.filename}'s tarball: {file.name}."
                                 )
                             with open(final_path, "wb") as f:
                                 f.write(io.read())
@@ -242,7 +245,6 @@ def fetch(
                         pdk_root=pdk_root,
                         pdk=pdk,
                         version=version,
-                        session=session,
                         **push_kwargs,
                     )
             else:
@@ -291,10 +293,7 @@ def enable(
     push_kwargs: dict = {},
     include_libraries: Optional[List[str]] = None,
     output: Union[Console, io.TextIOWrapper] = Console(),
-    session: Optional[GitHubSession] = None,
 ) -> Version:
-    if session is None:
-        session = GitHubSession()
 
     console = output
     if not isinstance(console, Console):
@@ -321,7 +320,6 @@ def enable(
         push_kwargs=push_kwargs,
         include_libraries=include_libraries,
         output=output,
-        session=session,
     )
 
     current_file = os.path.join(get_ciel_dir(pdk_root, pdk), "current")

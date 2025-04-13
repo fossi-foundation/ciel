@@ -1,3 +1,7 @@
+# Copyright 2025 The American University in Cairo
+#
+# Modified from the Volare project
+#
 # Copyright 2022-2023 Efabless Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -141,72 +145,6 @@ class Version(object):
             for version in os.listdir(versions_dir)
             if os.path.isdir(os.path.join(versions_dir, version))
         ]
-
-    @classmethod
-    def _from_github(
-        Self,
-        session: Optional[github.GitHubSession] = None,
-    ) -> Dict[str, List["Version"]]:
-        releases = github.get_releases(session)
-
-        rvs_by_pdk: Dict[str, List["Version"]] = {}
-
-        commit_rx = re.compile(r"released on ([\d\-\:TZ]+)")
-
-        for release in releases:
-            if release["draft"]:
-                continue
-            family, hash = release["tag_name"].rsplit("-", maxsplit=1)
-
-            upload_date = date_from_iso8601(release["published_at"])
-            commit_date = None
-
-            commit_date_match = commit_rx.search(release["body"])
-            if commit_date_match is not None:
-                commit_date = date_from_iso8601(commit_date_match[1])
-
-            remote_version = Self(
-                name=hash,
-                pdk=family,
-                commit_date=commit_date,
-                upload_date=upload_date,
-                prerelease=release["prerelease"],
-            )
-
-            if rvs_by_pdk.get(family) is None:
-                rvs_by_pdk[family] = rvs_by_pdk.get(family) or []
-
-            rvs_by_pdk[family].append(remote_version)
-
-        for family in rvs_by_pdk.keys():
-            rvs_by_pdk[family].sort(reverse=True)
-
-        return rvs_by_pdk
-
-    def get_release_links(
-        self,
-        scl_filter: Iterable[str],
-        include_common: bool,
-        session: Optional[github.GitHubSession] = None,
-    ) -> List[Tuple[str, str]]:
-        release = github.get_release_links(f"{self.pdk}-{self.name}", session)
-
-        assets = release["assets"]
-        zst_files = []
-        for asset in assets:
-            if asset["name"].endswith(".tar.zst"):
-                asset_scl = asset["name"][:-8]
-                if (
-                    asset_scl == "common" and include_common
-                ) or asset_scl in scl_filter:
-                    zst_files.append((asset["name"], asset["browser_download_url"]))
-
-        if len(zst_files) == 0:
-            raise ValueError(
-                f"No files found for standard cell libraries: {scl_filter}."
-            )
-
-        return zst_files
 
 
 def resolve_version(

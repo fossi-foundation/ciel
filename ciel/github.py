@@ -1,3 +1,7 @@
+# Copyright 2025 The American University in Cairo
+#
+# Modified from the Volare project
+#
 # Copyright 2022-2023 Efabless Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,6 +32,10 @@ class RepoInfo:
     owner: str
     name: str
 
+    @classmethod
+    def from_id(self, id_str: str) -> "RepoInfo":
+        return RepoInfo(*id_str.split("/", maxsplit=1))
+
     @property
     def id(self):
         return f"{self.owner}/{self.name}"
@@ -40,11 +48,6 @@ class RepoInfo:
     def api(self):
         return f"https://api.github.com/repos/{self.id}"
 
-
-volare_repo = RepoInfo(
-    os.getenv("VOLARE_REPO_OWNER", "efabless"),
-    os.getenv("VOLARE_REPO_NAME", "volare"),
-)
 
 opdks_repo = RepoInfo(
     os.getenv("OPDKS_REPO_OWNER", "RTimothyEdwards"),
@@ -68,16 +71,10 @@ class GitHubSession(httpx.Client):
             # 0. Lowest priority: ghcli
             try:
                 token = subprocess.check_output(
-                    [
-                        "gh",
-                        "auth",
-                        "token",
-                    ],
+                    ["gh", "auth", "token"],
                     encoding="utf8",
                 ).strip()
-            except FileNotFoundError:
-                pass
-            except subprocess.CalledProcessError:
+            except Exception:
                 pass
 
             # 1. Higher priority: environment GITHUB_TOKEN
@@ -166,19 +163,3 @@ def get_commit_date(
     date = response["commit"]["author"]["date"]
     commit_date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
     return commit_date
-
-
-def get_releases(session: Optional[GitHubSession] = None) -> List[Mapping[str, Any]]:
-    if session is None:
-        session = GitHubSession()
-
-    return session.api(volare_repo, "/releases", "get", params={"per_page": 100})
-
-
-def get_release_links(
-    release: str, session: Optional[GitHubSession] = None
-) -> Mapping[str, Any]:
-    if session is None:
-        session = GitHubSession()
-
-    return session.api(volare_repo, f"/releases/tags/{release}", "get")

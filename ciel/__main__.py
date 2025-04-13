@@ -1,3 +1,7 @@
+# Copyright 2025 The American University in Cairo
+#
+# Adapted from the Volare project
+#
 # Copyright 2022-2023 Efabless Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,6 +45,7 @@ from .build import (
     build_cmd,
     push_cmd,
 )
+from .source import DataSource
 
 
 @click.command("output")
@@ -139,8 +144,7 @@ def list_remote_cmd(pdk_root, pdk):
     """Lists PDK versions that are remotely available. JSON if not outputting to a tty."""
 
     try:
-        all_versions = Version._from_github()
-        pdk_versions = all_versions.get(pdk) or []
+        pdk_versions = DataSource.default.get_available_versions(pdk)
 
         if sys.stdout.isatty():
             console = Console()
@@ -148,6 +152,13 @@ def list_remote_cmd(pdk_root, pdk):
         else:
             for version in pdk_versions:
                 print(version.name)
+    except ValueError as e:
+        if sys.stdout.isatty():
+            console = Console()
+            console.print(f"[red]{e}")
+        else:
+            print(f"{e}", file=sys.stderr)
+        sys.exit(-1)
     except httpx.HTTPStatusError as e:
         if sys.stdout.isatty():
             console = Console()
