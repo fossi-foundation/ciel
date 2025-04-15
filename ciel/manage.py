@@ -31,7 +31,6 @@ import zstandard as zstd
 from rich.console import Console
 
 from .build.git_multi_clone import mkdirp
-from .github import GitHubSession
 from .common import (
     Version,
     get_versions_dir,

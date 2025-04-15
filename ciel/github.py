@@ -20,7 +20,7 @@ import subprocess
 import sys
 from datetime import datetime
 from dataclasses import dataclass
-from typing import Any, ClassVar, List, Mapping, Optional
+from typing import Any, ClassVar, Optional
 
 import httpx
 import ssl

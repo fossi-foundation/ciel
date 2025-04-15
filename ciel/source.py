@@ -17,8 +17,8 @@
 # limitations under the License.
 import os
 import re
-from dataclasses import dataclass
 import sys
+from dataclasses import dataclass
 from typing import Dict, ClassVar, List, Tuple, Type
 
 import httpx
@@ -38,6 +38,9 @@ class DataSource(object):
     factory: ClassVar[Dict[str, Type["DataSource"]]] = {}
     default: ClassVar["DataSource"]
 
+    def __init__(self, argument: str):
+        raise NotImplementedError()
+
     def get_available_versions(self, pdk: str) -> List[Version]:
         raise NotImplementedError()
 
@@ -47,7 +50,7 @@ class DataSource(object):
         raise NotImplementedError()
 
 
-class GitHubReleasesDataSource(object):
+class GitHubReleasesDataSource(DataSource):
     def __init__(self, repo_id: str):
         self.session = GitHubSession()
         self.repo = RepoInfo.from_id(repo_id)
@@ -122,7 +125,7 @@ class GitHubReleasesDataSource(object):
                 zst_files.append(
                     Asset(content, asset["name"], asset["browser_download_url"])
                 )
-        return zst_files
+        return (self.session, zst_files)
 
 
 DataSource.factory["github-releases"] = GitHubReleasesDataSource
@@ -133,14 +136,16 @@ def __set_data_source_default():
     elements = source_id.split(":", maxsplit=1)
     if len(elements) != 2:
         print(
-            f"[CRITICAL] CIEL_DATA_SOURCE must be in the format '{{class_id}}:{{argument}}'."
+            "[CRITICAL] CIEL_DATA_SOURCE must be in the format '{{class_id}}:{{argument}}'.",
+            file=sys.stderr,
         )
         sys.exit(-1)
     cls_id, target = elements
     cls = DataSource.factory.get(cls_id)
     if cls is None:
         print(
-            f"[CRITICAL] CIEL_DATA_SOURCE defines unknown data source class '{cls_id}'"
+            f"[CRITICAL] CIEL_DATA_SOURCE defines unknown data source class '{cls_id}'",
+            file=sys.stderr,
         )
         sys.exit(-1)
     DataSource.default = cls(target)

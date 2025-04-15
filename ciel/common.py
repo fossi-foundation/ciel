@@ -16,14 +16,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import re
 import shutil
 import pathlib
 from datetime import datetime
 from dataclasses import dataclass
-from typing import Iterable, Optional, List, Dict, Tuple
+from typing import Optional, List
 
-from . import github
 from .families import Family
 
 # -- Assorted Helper Functions
