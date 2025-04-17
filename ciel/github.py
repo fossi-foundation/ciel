@@ -1,3 +1,7 @@
+# Copyright 2025 The American University in Cairo
+#
+# Modified from the Volare project
+#
 # Copyright 2022-2023 Efabless Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,11 +16,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import subprocess
 import sys
+import click
+import subprocess
 from datetime import datetime
 from dataclasses import dataclass
-from typing import Any, ClassVar, List, Mapping, Optional
+from typing import Any, ClassVar, Optional, Callable
 
 import httpx
 import ssl
@@ -27,6 +32,10 @@ from .__version__ import __version__
 class RepoInfo:
     owner: str
     name: str
+
+    @classmethod
+    def from_id(self, id_str: str) -> "RepoInfo":
+        return RepoInfo(*id_str.split("/", maxsplit=1))
 
     @property
     def id(self):
@@ -40,11 +49,6 @@ class RepoInfo:
     def api(self):
         return f"https://api.github.com/repos/{self.id}"
 
-
-volare_repo = RepoInfo(
-    os.getenv("VOLARE_REPO_OWNER", "efabless"),
-    os.getenv("VOLARE_REPO_NAME", "volare"),
-)
 
 opdks_repo = RepoInfo(
     os.getenv("OPDKS_REPO_OWNER", "RTimothyEdwards"),
@@ -68,16 +72,10 @@ class GitHubSession(httpx.Client):
             # 0. Lowest priority: ghcli
             try:
                 token = subprocess.check_output(
-                    [
-                        "gh",
-                        "auth",
-                        "token",
-                    ],
+                    ["gh", "auth", "token"],
                     encoding="utf8",
                 ).strip()
-            except FileNotFoundError:
-                pass
-            except subprocess.CalledProcessError:
+            except Exception:
                 pass
 
             # 1. Higher priority: environment GITHUB_TOKEN
@@ -168,17 +166,23 @@ def get_commit_date(
     return commit_date
 
 
-def get_releases(session: Optional[GitHubSession] = None) -> List[Mapping[str, Any]]:
-    if session is None:
-        session = GitHubSession()
+def set_token_cb(
+    ctx: click.Context,
+    param: click.Parameter,
+    value: Optional[str],
+):
+    GitHubSession.Token.override = value
 
-    return session.api(volare_repo, "/releases", "get", params={"per_page": 100})
 
-
-def get_release_links(
-    release: str, session: Optional[GitHubSession] = None
-) -> Mapping[str, Any]:
-    if session is None:
-        session = GitHubSession()
-
-    return session.api(volare_repo, f"/releases/tags/{release}", "get")
+def opt_github_token(function: Callable) -> Callable:
+    function = click.option(
+        "-t",
+        "--github-token",
+        default=None,
+        required=False,
+        expose_value=False,
+        show_default=True,
+        help="Replace the token used for GitHub requests, which is by default the value of the environment variable GITHUB_TOKEN or None.",
+        callback=set_token_cb,
+    )(function)
+    return function

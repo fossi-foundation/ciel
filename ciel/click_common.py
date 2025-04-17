@@ -1,3 +1,7 @@
+# Copyright 2025 The American University in Cairo
+#
+# Adapted from the Volare project
+#
 # Copyright 2022-2023 Efabless Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,12 +17,11 @@
 # limitations under the License.
 import os
 from functools import partial
-from typing import Callable, Optional
+from typing import Callable
 
 import click
 
 from .common import VOLARE_RESOLVED_HOME
-from .github import volare_repo, GitHubSession
 
 opt = partial(click.option, show_default=True)
 
@@ -77,12 +80,10 @@ def opt_build(function: Callable):
 
 
 def opt_push(function: Callable):
-    function = opt("-o", "--owner", default=volare_repo.owner, help="Repository Owner")(
+    function = opt("-o", "--owner", default="efabless", help="Repository Owner")(
         function
     )
-    function = opt("-r", "--repository", default=volare_repo.name, help="Repository")(
-        function
-    )
+    function = opt("-r", "--repository", default="volare", help="Repository")(function)
     function = opt(
         "--pre/--prod", default=False, help="Push as pre-release or production"
     )(function)
@@ -93,27 +94,5 @@ def opt_push(function: Callable):
         multiple=True,
         default=None,
         help="Push only libraries in this list. You can use -L multiple times to include multiple libraries. Pass 'None' to push all libraries built.",
-    )(function)
-    return function
-
-
-def set_token_cb(
-    ctx: click.Context,
-    param: click.Parameter,
-    value: Optional[str],
-):
-    GitHubSession.Token.override = value
-
-
-def opt_token(function: Callable) -> Callable:
-    function = opt(
-        "-t",
-        "--token",
-        "session",
-        default=None,
-        required=False,
-        expose_value=False,
-        help="Replace the GitHub token used for GitHub requests, which is by default the value of the environment variable GITHUB_TOKEN or None.",
-        callback=set_token_cb,
     )(function)
     return function

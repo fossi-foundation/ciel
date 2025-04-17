@@ -1,8 +1,11 @@
 [tool.poetry]
 name = "ciel"
-version = "0.21.0dev1"
+version = "1.0.0"
 description = "An PDK builder/version manager for PDKs in the open_pdks format"
-authors = ["Efabless Corporation and Contributors <donn@efabless.com>"]
+authors = [
+    "Mohamed Gaber <me@donn.website>",
+    "Efabless Corporation"
+]
 readme = "Readme.md"
 license = "Apache-2.0"
 repository = "https://github.com/fossi-foundation/ciel"

@@ -1,3 +1,7 @@
+# Copyright 2025 The American University in Cairo
+#
+# Adapted from the Volare project
+#
 # Copyright 2022-2023 Efabless Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,11 +29,7 @@ from .common import (
     resolve_version,
 )
 from .click_common import (
-    opt,
-    opt_build,
-    opt_push,
     opt_pdk_root,
-    opt_token,
 )
 from .manage import (
     print_installed_list,
@@ -41,6 +41,8 @@ from .build import (
     build_cmd,
     push_cmd,
 )
+from .github import opt_github_token
+from .source import opt_data_source
 
 
 @click.command("output")
@@ -113,9 +115,10 @@ def rm_cmd(pdk_root, pdk, version):
 
 
 @click.command("ls")
-@opt_token
+@opt_data_source
+@opt_github_token
 @opt_pdk_root
-def list_cmd(pdk_root, pdk):
+def list_cmd(data_source, pdk_root, pdk):
     """Lists PDK versions that are locally installed. JSON if not outputting to a tty."""
 
     pdk_versions = Version.get_all_installed(pdk_root, pdk)
@@ -125,6 +128,7 @@ def list_cmd(pdk_root, pdk):
         print_installed_list(
             pdk_root,
             pdk,
+            data_source=data_source,
             console=console,
             installed_list=pdk_versions,
         )
@@ -133,14 +137,14 @@ def list_cmd(pdk_root, pdk):
 
 
 @click.command("ls-remote")
-@opt_token
+@opt_github_token
+@opt_data_source
 @opt_pdk_root
-def list_remote_cmd(pdk_root, pdk):
+def list_remote_cmd(data_source, pdk_root, pdk):
     """Lists PDK versions that are remotely available. JSON if not outputting to a tty."""
 
     try:
-        all_versions = Version._from_github()
-        pdk_versions = all_versions.get(pdk) or []
+        pdk_versions = data_source.get_available_versions(pdk)
 
         if sys.stdout.isatty():
             console = Console()
@@ -148,6 +152,13 @@ def list_remote_cmd(pdk_root, pdk):
         else:
             for version in pdk_versions:
                 print(version.name)
+    except ValueError as e:
+        if sys.stdout.isatty():
+            console = Console()
+            console.print(f"[red]{e}")
+        else:
+            print(f"{e}", file=sys.stderr)
+        sys.exit(-1)
     except httpx.HTTPStatusError as e:
         if sys.stdout.isatty():
             console = Console()
@@ -184,7 +195,8 @@ def path_cmd(pdk_root, pdk, version):
 
 
 @click.command("enable")
-@opt_token
+@opt_data_source
+@opt_github_token
 @opt_pdk_root
 @click.option(
     "-f",
@@ -202,6 +214,7 @@ def path_cmd(pdk_root, pdk, version):
 )
 @click.argument("version", required=False)
 def enable_cmd(
+    data_source,
     pdk_root,
     pdk,
     tool_metadata_file_path,
@@ -234,6 +247,7 @@ def enable_cmd(
             version,
             include_libraries=include_libraries,
             output=console,
+            data_source=data_source,
         )
     except Exception as e:
         console.print(f"[red]{e}")
@@ -241,7 +255,8 @@ def enable_cmd(
 
 
 @click.command("fetch")
-@opt_token
+@opt_data_source
+@opt_github_token
 @opt_pdk_root
 @click.option(
     "-f",
@@ -259,6 +274,7 @@ def enable_cmd(
 )
 @click.argument("version", required=False)
 def fetch_cmd(
+    data_source,
     pdk_root,
     pdk,
     tool_metadata_file_path,
@@ -287,6 +303,7 @@ def fetch_cmd(
 
     try:
         version = fetch(
+            data_source=data_source,
             pdk_root=pdk_root,
             pdk=pdk,
             version=version,
@@ -295,79 +312,6 @@ def fetch_cmd(
         )
         print(version.get_dir(pdk_root), end="")
 
-    except Exception as e:
-        console.print(f"[red]{e}")
-        exit(-1)
-
-
-@click.command("enable_or_build", hidden=True)
-@opt_token
-@opt_pdk_root
-@opt_push
-@opt_build
-@opt("--also-push/--dont-push", default=False, help="Also push.")
-@click.option(
-    "-f",
-    "--metadata-file",
-    "tool_metadata_file_path",
-    default=None,
-    help="Explicitly define a tool metadata file instead of searching for a metadata file",
-)
-@click.argument("version")
-def enable_or_build_cmd(
-    include_libraries,
-    jobs,
-    pdk_root,
-    pdk,
-    owner,
-    repository,
-    pre,
-    clear_build_artifacts,
-    tool_metadata_file_path,
-    also_push,
-    version,
-    use_repo_at,
-    push_libraries,
-):
-    """
-    Attempts to activate a given PDK version. If the version is not found locally or remotely,
-    it will instead attempt to build said version.
-
-    Parameters: <version>
-    """
-    if include_libraries == ():
-        include_libraries = None
-    if push_libraries == ():
-        push_libraries = include_libraries
-
-    console = Console()
-    try:
-        version = resolve_version(version, tool_metadata_file_path)
-    except Exception as e:
-        console.print(f"Could not determine open_pdks version: {e}")
-        exit(-1)
-    try:
-        enable(
-            pdk_root=pdk_root,
-            pdk=pdk,
-            version=version,
-            build_if_not_found=True,
-            also_push=also_push,
-            build_kwargs={
-                "include_libraries": include_libraries,
-                "jobs": jobs,
-                "clear_build_artifacts": clear_build_artifacts,
-                "use_repo_at": use_repo_at,
-            },
-            push_kwargs={
-                "owner": owner,
-                "repository": repository,
-                "pre": pre,
-                "push_libraries": push_libraries,
-            },
-            include_libraries=include_libraries,
-            output=console,
-        )
     except Exception as e:
         console.print(f"[red]{e}")
         exit(-1)
@@ -404,7 +348,6 @@ cli.add_command(list_cmd)
 cli.add_command(list_remote_cmd)
 cli.add_command(enable_cmd)
 cli.add_command(fetch_cmd)
-cli.add_command(enable_or_build_cmd)
 
 try:
     import ssl  # noqa: F401
