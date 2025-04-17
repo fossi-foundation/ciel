@@ -32,6 +32,7 @@ from rich.progress import Progress
 from ..github import (
     GitHubSession,
     get_commit_date,
+    opt_github_token,
 )
 from ..common import (
     Version,
@@ -43,7 +44,6 @@ from ..click_common import (
     opt_push,
     opt_build,
     opt_pdk_root,
-    opt_token,
 )
 from ..families import Family
 
@@ -82,7 +82,7 @@ def build(
 
 
 @click.command("build")
-@opt_token
+@opt_github_token
 @opt_pdk_root
 @opt_build
 @click.option(
@@ -232,7 +232,7 @@ def push(
 
 
 @click.command("push", hidden=True)
-@opt_token
+@opt_github_token
 @opt_pdk_root
 @opt_push
 @click.argument("version")

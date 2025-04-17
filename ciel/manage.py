@@ -49,6 +49,7 @@ def print_installed_list(
     pdk_root: str,
     pdk: str,
     *,
+    data_source: DataSource,
     console: Console,
     installed_list: List[Version],
 ):
@@ -59,7 +60,7 @@ def print_installed_list(
     versions = installed_list
 
     try:
-        remote_versions = DataSource.default.get_available_versions(pdk)
+        remote_versions = data_source.get_available_versions(pdk)
         remote_version_dict = {rv.name: rv for rv in remote_versions}
         for installed in installed_list:
             remote_version = remote_version_dict.get(installed.name)
@@ -120,6 +121,7 @@ def fetch(
     pdk: str,
     version: str,
     *,
+    data_source: DataSource,
     build_if_not_found=False,
     also_push=False,
     build_kwargs: dict = {},
@@ -176,9 +178,7 @@ def fetch(
 
         tarball_paths = []
         try:
-            client, assets = DataSource.default.get_downloads_for_version(
-                version_object
-            )
+            client, assets = data_source.get_downloads_for_version(version_object)
             assets_filtered = []
             for asset in assets:
                 if asset.content == "common" and common_missing:
@@ -286,6 +286,7 @@ def enable(
     pdk: str,
     version: str,
     *,
+    data_source: DataSource,
     build_if_not_found: bool = False,
     also_push: bool = False,
     build_kwargs: dict = {},
@@ -313,6 +314,7 @@ def enable(
         pdk_root,
         pdk,
         version,
+        data_source=data_source,
         build_if_not_found=build_if_not_found,
         also_push=also_push,
         build_kwargs=build_kwargs,

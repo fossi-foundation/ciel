@@ -16,11 +16,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import subprocess
 import sys
+import click
+import subprocess
 from datetime import datetime
 from dataclasses import dataclass
-from typing import Any, ClassVar, Optional
+from typing import Any, ClassVar, Optional, Callable
 
 import httpx
 import ssl
@@ -163,3 +164,25 @@ def get_commit_date(
     date = response["commit"]["author"]["date"]
     commit_date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
     return commit_date
+
+
+def set_token_cb(
+    ctx: click.Context,
+    param: click.Parameter,
+    value: Optional[str],
+):
+    GitHubSession.Token.override = value
+
+
+def opt_github_token(function: Callable) -> Callable:
+    function = click.option(
+        "-t",
+        "--github-token",
+        default=None,
+        required=False,
+        expose_value=False,
+        show_default=True,
+        help="Replace the token used for GitHub requests, which is by default the value of the environment variable GITHUB_TOKEN or None.",
+        callback=set_token_cb,
+    )(function)
+    return function

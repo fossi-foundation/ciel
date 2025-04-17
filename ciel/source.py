@@ -15,12 +15,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
 import re
 import sys
 from dataclasses import dataclass
-from typing import Dict, ClassVar, List, Tuple, Type
+from typing import Dict, ClassVar, List, Tuple, Type, Callable
 
+import click
 import httpx
 
 from .github import GitHubSession, RepoInfo
@@ -131,24 +131,99 @@ class GitHubReleasesDataSource(DataSource):
 DataSource.factory["github-releases"] = GitHubReleasesDataSource
 
 
-def __set_data_source_default():
-    source_id = os.getenv("CIEL_DATA_SOURCE", "github-releases:efabless/volare")
+class StaticWebDataSource(DataSource):
+    def __init__(self, base_url: str):
+        self.session = GitHubSession()
+        self.base_url = base_url
+
+    def get_available_versions(self, pdk: str) -> List[Version]:
+        req = self.session.request("GET", self.base_url + f"/{pdk}/manifest.json")
+        try:
+            req.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                raise ValueError(
+                    f"No versions found for '{pdk}' at '{self.base_url}'"
+                ) from None
+            else:
+                raise e from None
+        manifest = req.json()
+
+        versions = []
+        for version in manifest["versions"]:
+            remote_version = Version(
+                name=version["version"],
+                pdk=manifest["pdk"],
+                commit_date=date_from_iso8601(version["date"]),
+                prerelease=version.get("prerelease", False),
+            )
+            versions.append(remote_version)
+
+        versions.sort(reverse=True)
+        if len(versions) == 0:
+            raise ValueError(f"No versions found for '{pdk}' on '{self.base_url}'")
+        return versions
+
+    def get_downloads_for_version(
+        self, version: Version
+    ) -> Tuple[httpx.Client, List[Asset]]:
+        req = self.session.request(
+            "GET", self.base_url + f"/{version.pdk}/{version.name}/manifest.json"
+        )
+        try:
+            req.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                raise ValueError(
+                    f"Manifest for '{version.pdk}/{version.name}' at '{self.base_url}'"
+                ) from None
+            else:
+                raise e from None
+        manifest = req.json()
+        assets = []
+        for asset in manifest["assets"]:
+            assets.append(Asset(**asset))
+        return (self.session, assets)
+
+
+DataSource.factory["static-web"] = StaticWebDataSource
+
+
+def data_source_cb(
+    ctx: click.Context,
+    param: click.Parameter,
+    value: str,
+):
+    source_id = value
     elements = source_id.split(":", maxsplit=1)
     if len(elements) != 2:
         print(
-            "[CRITICAL] CIEL_DATA_SOURCE must be in the format '{{class_id}}:{{argument}}'.",
+            "Data source must be in the format '{{class_id}}:{{argument}}' where class_id is one of:",
             file=sys.stderr,
         )
-        sys.exit(-1)
+        for id in DataSource.factory:
+            print(f"* {id}", file=sys.stderr)
+        ctx.exit(-1)
     cls_id, target = elements
     cls = DataSource.factory.get(cls_id)
     if cls is None:
         print(
-            f"[CRITICAL] CIEL_DATA_SOURCE defines unknown data source class '{cls_id}'",
+            f"Unknown data source class '{cls_id}', must be one of:",
             file=sys.stderr,
         )
-        sys.exit(-1)
-    DataSource.default = cls(target)
+        for id in DataSource.factory:
+            print(f"* {id}", file=sys.stderr)
+        ctx.exit(-1)
+    return cls(target)
 
 
-__set_data_source_default()
+def opt_data_source(function: Callable) -> Callable:
+    function = click.option(
+        "--data-source",
+        default="static-web:https://fossi-foundation.github.io/ciel-releases",
+        required=False,
+        show_default=True,
+        help="The data source to use for operations that may require contacting a remote server, in the format '{class_id}:{argument}'",
+        callback=data_source_cb,
+    )(function)
+    return function
