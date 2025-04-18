@@ -19,6 +19,7 @@ import os
 import shutil
 import pathlib
 from datetime import datetime
+from rich.console import Console
 from dataclasses import dataclass
 from typing import Optional, List
 
@@ -43,8 +44,8 @@ def mkdirp(path):
 # -- API Variables
 
 # -- PDK Root Management
-VOLARE_DEFAULT_HOME = os.path.join(os.path.expanduser("~"), ".ciel")
-VOLARE_RESOLVED_HOME = os.getenv("PDK_ROOT") or VOLARE_DEFAULT_HOME
+CIEL_DEFAULT_HOME = os.path.join(os.path.expanduser("~"), ".ciel")
+CIEL_RESOLVED_HOME = os.getenv("PDK_ROOT") or CIEL_DEFAULT_HOME
 
 
 def _get_current_version(pdk_root: str, pdk: str) -> Optional[str]:
@@ -61,7 +62,7 @@ def _get_current_version(pdk_root: str, pdk: str) -> Optional[str]:
 
 
 def get_ciel_home(pdk_root: Optional[str] = None) -> str:
-    return pdk_root or VOLARE_RESOLVED_HOME
+    return pdk_root or CIEL_RESOLVED_HOME
 
 
 def get_ciel_dir(pdk_root: str, pdk: str) -> str:
@@ -70,6 +71,28 @@ def get_ciel_dir(pdk_root: str, pdk: str) -> str:
 
 def get_versions_dir(pdk_root: str, pdk: str) -> str:
     return os.path.join(get_ciel_dir(pdk_root, pdk), "versions")
+
+
+def get_pdk_family_from_pdk(pdk):
+    if pdk is None:
+        return None
+
+    for pdk_family in Family.by_name.values():
+        if pdk in pdk_family.variants:
+            return pdk_family.name
+
+    return None
+
+
+def print_available_pdk_families():
+    families = [family for family in Family.by_name]
+
+    console = Console()
+    console.print(
+        "Please specify a pdk family using either '--pdk-family' or the 'PDK_FAMILY' environment variable.\n"
+        "Ciel also considers the 'PDK' environment variable and tries to find the corresponding pdk family."
+    )
+    console.print(f"The following pdk families are supported: {', '.join(families)}")
 
 
 @dataclass
