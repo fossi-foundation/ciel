@@ -46,7 +46,7 @@ ciel --version
 # About the builds
 In its current inception, ciel supports builds of **sky130** and **gf180mcu** PDKs using [Open_PDKs](https://github.com/efabless/open_pdks), including the following libraries:
 
-|sky130|gf180mcu|ihp_sg13g2|
+|sky130|gf180mcu|ihp-sg13g2|
 |-|-|-|
 |sky130_fd_io|gf180mcu_fd_io|sg13g2_io|
 |sky130_fd_pr|gf180mcu_fd_pr|sg13g2_pr|
@@ -60,16 +60,16 @@ In its current inception, ciel supports builds of **sky130** and **gf180mcu** PD
 |sky130_fd_sc_hs|-|-|
 |sky130_sram_macros|gf180mcu_fd_ip_sram|sg13g2_sram|
 
-Builds for sky130 and gf180mcu are identified by their [**open_pdks**](https://github.com/rtimothyedwards/open_pdks) commit hashes. Builds for ihp_sg13g2 are identified by their [**IHP-Open-PDK**](https://github.com/ihp-gmbh/ihp-open-pdk) commit hashes.
+Builds for sky130 and gf180mcu are identified by their [**open_pdks**](https://github.com/rtimothyedwards/open_pdks) commit hashes. Builds for ihp-sg13g2 are identified by their [**IHP-Open-PDK**](https://github.com/ihp-gmbh/ihp-open-pdk) commit hashes.
 
 # Usage
 Ciel requires a so-called **PDK Root**. This PDK root can be anywhere on your computer, but by default it's the folder `~/.ciel` in your home directory. If you have the variable `PDK_ROOT` set, ciel will use that instead. You can also manually override both values by supplying the `--pdk-root` commandline argument.
 
 ## Listing All Available PDKs
-To list all available pre-built PDKs hosted in this repository, you can just invoke `ciel ls-remote --pdk <PDK>`. If you omit the `--pdk` argument, `sky130` will be used as a default.
+To list all available pre-built PDK families hosted in this repository, you can just invoke `ciel ls-remote --pdk-family <pdk-family>`.
 
 ```sh
-$ ciel ls-remote --pdk sky130
+$ ciel ls-remote --pdk-family sky130
 Pre-built sky130 PDK versions
 ├── 44a43c23c81b45b8e774ae7a84899a5a778b6b0b (2022.08.16) (enabled)
 ├── e8294524e5f67c533c5d0c3afa0bcc5b2a5fa066 (2022.07.29) (installed)
@@ -79,7 +79,7 @@ Pre-built sky130 PDK versions
 ├── 8fe7f760ece2bb49b1c310e60243f0558977dae5 (2022.04.06)
 └── 7519dfb04400f224f140749cda44ee7de6f5e095 (2022.02.10)
 
-$ ciel ls-remote --pdk gf180mcu
+$ ciel ls-remote --pdk-family gf180mcu
 Pre-built gf180mcu PDK versions
 └── 120b0bd69c745825a0b8b76f364043a1cd08bb6a (2022.09.22)
 ```
@@ -87,10 +87,10 @@ Pre-built gf180mcu PDK versions
 It includes a hash of the commit of the relevant repo used for that particular build, the date that this commit was created, and whether you already installed this PDK and/or if it is the currently enabled PDK.
 
 ## Listing Installed PDKs
-Typing `ciel ls --pdk <pdk>` in the terminal shows you your PDK Root and the PDKs you currently have installed. Again, if you omit the `--pdk` argument, `sky130` will be used as a default.
+Typing `ciel ls --pdk-family <pdk-family>` in the terminal shows you your PDK Root and the PDKs you currently have installed.
 
 ```sh
-$ ciel ls --pdk sky130
+$ ciel ls --pdk-family sky130
 /home/test/ciel/sky130/versions
 ├── 44a43c23c81b45b8e774ae7a84899a5a778b6b0b (2022.08.16) (enabled)
 ├── e8294524e5f67c533c5d0c3afa0bcc5b2a5fa066 (2022.07.29)
@@ -101,12 +101,12 @@ $ ciel ls --pdk sky130
 
 
 ## Downloading and Enabling PDKs
-You can enable a particular sky130 PDK by invoking `ciel enable --pdk <pdk> <open_pdks commit hash>`. This will automatically download that particular version of the PDK, if found, and set it as your currently used PDK.
+You can enable a particular sky130 PDK by invoking `ciel enable --pdk-family <pdk-family> <open_pdks commit hash>`. This will automatically download that particular version of the PDK, if found, and set it as your currently used PDK.
 
-For example, to activate a build of sky130 using open_pdks `7519dfb04400f224f140749cda44ee7de6f5e095`, you invoke `ciel enable --pdk sky130 7519dfb04400f224f140749cda44ee7de6f5e095`, as shown below:
+For example, to activate a build of sky130 using open_pdks `7519dfb04400f224f140749cda44ee7de6f5e095`, you invoke `ciel enable --pdk-family sky130 7519dfb04400f224f140749cda44ee7de6f5e095`, as shown below:
 
 ```sh
-$ ciel enable --pdk sky130 7519dfb04400f224f140749cda44ee7de6f5e095
+$ ciel enable --pdk-family sky130 7519dfb04400f224f140749cda44ee7de6f5e095
 Downloading pre-built tarball for 7519dfb04400f224f140749cda44ee7de6f5e095… ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00
 Unpacking…                                                                  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00
 PDK version 7519dfb04400f224f140749cda44ee7de6f5e095 enabled.

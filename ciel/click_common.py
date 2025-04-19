@@ -21,22 +21,25 @@ from typing import Callable
 
 import click
 
-from .common import VOLARE_RESOLVED_HOME
+from .common import (
+    CIEL_RESOLVED_HOME,
+    get_pdk_family_from_pdk,
+)
 
 opt = partial(click.option, show_default=True)
 
 
 def opt_pdk_root(function: Callable):
     function = opt(
-        "--pdk",
+        "--pdk-family",
         required=False,
-        default=os.getenv("PDK_FAMILY") or "sky130",
-        help="The PDK family to install",
+        default=os.getenv("PDK_FAMILY") or get_pdk_family_from_pdk(os.getenv("PDK")),
+        help="The PDK family to install. If a pdk name is given, ciel attempts to find the corresponding pdk family.",
     )(function)
     function = opt(
         "--pdk-root",
         required=False,
-        default=VOLARE_RESOLVED_HOME,
+        default=CIEL_RESOLVED_HOME,
         help="Path to the PDK root",
     )(function)
     return function
