@@ -47,7 +47,7 @@ from .source import opt_data_source
 
 @click.command("output")
 @opt_pdk_root
-def output_cmd(pdk_root, pdk):
+def output_cmd(pdk_root, pdk_family):
     """Outputs the currently enabled PDK version.
 
     If not outputting to a tty, the output is either the version string
@@ -55,14 +55,16 @@ def output_cmd(pdk_root, pdk):
     exit code of 1.
     """
 
-    version = Version.get_current(pdk_root, pdk)
+    version = Version.get_current(pdk_root, pdk_family)
     if sys.stdout.isatty():
         if version is None:
-            print(f"No version of the PDK {pdk} is currently enabled at {pdk_root}.")
+            print(
+                f"No version of the PDK {pdk_family} is currently enabled at {pdk_root}."
+            )
             print("Invoke ciel --help for assistance installing and enabling versions.")
             exit(1)
         else:
-            print(f"Installed: {pdk} v{version.name}")
+            print(f"Installed: {pdk_family} v{version.name}")
             print("Invoke ciel --help for assistance installing and enabling versions.")
     else:
         if version is None:
@@ -80,9 +82,10 @@ def output_cmd(pdk_root, pdk):
     expose_value=False,
     prompt="Are you sure? This will delete all non-enabled versions of the PDK from your computer.",
 )
-def prune_cmd(pdk_root, pdk):
+def prune_cmd(pdk_root, pdk_family):
     """Removes all PDKs other than, if it exists, the one currently in use."""
-    pdk_versions = Version.get_all_installed(pdk_root, pdk)
+
+    pdk_versions = Version.get_all_installed(pdk_root, pdk_family)
     for version in pdk_versions:
         if version.is_current(pdk_root):
             continue
@@ -103,9 +106,10 @@ def prune_cmd(pdk_root, pdk):
     prompt="Are you sure? This will delete this version of the PDK from your computer.",
 )
 @click.argument("version", required=False)
-def rm_cmd(pdk_root, pdk, version):
+def rm_cmd(pdk_root, pdk_family, version):
     """Removes the PDK version specified."""
-    version_object = Version(version, pdk)
+
+    version_object = Version(version, pdk_family)
     try:
         version_object.uninstall(pdk_root)
         print(f"Deleted {version}.")
@@ -118,16 +122,16 @@ def rm_cmd(pdk_root, pdk, version):
 @opt_data_source
 @opt_github_token
 @opt_pdk_root
-def list_cmd(data_source, pdk_root, pdk):
+def list_cmd(data_source, pdk_root, pdk_family):
     """Lists PDK versions that are locally installed. JSON if not outputting to a tty."""
 
-    pdk_versions = Version.get_all_installed(pdk_root, pdk)
+    pdk_versions = Version.get_all_installed(pdk_root, pdk_family)
 
     if sys.stdout.isatty():
         console = Console()
         print_installed_list(
             pdk_root,
-            pdk,
+            pdk_family,
             data_source=data_source,
             console=console,
             installed_list=pdk_versions,
@@ -140,15 +144,15 @@ def list_cmd(data_source, pdk_root, pdk):
 @opt_github_token
 @opt_data_source
 @opt_pdk_root
-def list_remote_cmd(data_source, pdk_root, pdk):
+def list_remote_cmd(data_source, pdk_root, pdk_family):
     """Lists PDK versions that are remotely available. JSON if not outputting to a tty."""
 
     try:
-        pdk_versions = data_source.get_available_versions(pdk)
+        pdk_versions = data_source.get_available_versions(pdk_family)
 
         if sys.stdout.isatty():
             console = Console()
-            print_remote_list(pdk_root, pdk, console, pdk_versions)
+            print_remote_list(pdk_root, pdk_family, console, pdk_versions)
         else:
             for version in pdk_versions:
                 print(version.name)
@@ -180,7 +184,7 @@ def list_remote_cmd(data_source, pdk_root, pdk):
 @click.command("path")
 @opt_pdk_root
 @click.argument("version", required=False)
-def path_cmd(pdk_root, pdk, version):
+def path_cmd(pdk_root, pdk_family, version):
     """
     Prints the path of the ciel PDK root.
 
@@ -188,7 +192,7 @@ def path_cmd(pdk_root, pdk, version):
     version instead.
     """
     if version is not None:
-        version = Version(version, pdk)
+        version = Version(version, pdk_family)
         print(version.get_dir(pdk_root), end="")
     else:
         print(get_ciel_home(pdk_root))
@@ -216,7 +220,7 @@ def path_cmd(pdk_root, pdk, version):
 def enable_cmd(
     data_source,
     pdk_root,
-    pdk,
+    pdk_family,
     tool_metadata_file_path,
     version,
     include_libraries,
@@ -230,6 +234,7 @@ def enable_cmd(
     tools with a tool_metadata.yml file, for example OpenLane or DFFRAM,
     the appropriate version will be enabled automatically.
     """
+
     if include_libraries == ():
         include_libraries = None
 
@@ -243,7 +248,7 @@ def enable_cmd(
     try:
         enable(
             pdk_root,
-            pdk,
+            pdk_family,
             version,
             include_libraries=include_libraries,
             output=console,
@@ -276,7 +281,7 @@ def enable_cmd(
 def fetch_cmd(
     data_source,
     pdk_root,
-    pdk,
+    pdk_family,
     tool_metadata_file_path,
     version,
     include_libraries,
@@ -291,6 +296,7 @@ def fetch_cmd(
     tools with a tool_metadata.yml file, for example OpenLane or DFFRAM,
     the appropriate version will be enabled automatically.
     """
+
     if include_libraries == ():
         include_libraries = None
 
@@ -305,7 +311,7 @@ def fetch_cmd(
         version = fetch(
             data_source=data_source,
             pdk_root=pdk_root,
-            pdk=pdk,
+            pdk=pdk_family,
             version=version,
             include_libraries=include_libraries,
             output=console,

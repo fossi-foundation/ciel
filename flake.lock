@@ -5,15 +5,15 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1735039316,
-        "narHash": "sha256-T9NFsUbaukW97A0+oQFkgu7/KxAOl3A46Ce8gOGFmZY=",
-        "owner": "efabless",
+        "lastModified": 1743562091,
+        "narHash": "sha256-uoJqa3on+kDu+XxST+TfBFbCkR+md9jXrYg+qHawIxs=",
+        "owner": "fossi-foundation",
         "repo": "nix-eda",
-        "rev": "2bc60735f29c5050cb9740c43f614eac11d2b4ca",
+        "rev": "1e53da779fa9eed6290cd27b8e7f78196028ddfb",
         "type": "github"
       },
       "original": {
-        "owner": "efabless",
+        "owner": "fossi-foundation",
         "repo": "nix-eda",
         "type": "github"
       }

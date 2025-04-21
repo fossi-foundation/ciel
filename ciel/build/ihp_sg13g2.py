@@ -83,9 +83,9 @@ def build_ihp(build_directory, ihp_path):
 def install_ihp(build_directory, pdk_root, version):
     console = Console()
     with console.status("Adding build to list of installed versions…"):
-        ihp_sg13g2_family = Family.by_name["ihp_sg13g2"]
+        ihp_sg13g2_family = Family.by_name["ihp-sg13g2"]
 
-        version_directory = Version(version, "ihp_sg13g2").get_dir(pdk_root)
+        version_directory = Version(version, "ihp-sg13g2").get_dir(pdk_root)
         if (
             os.path.exists(version_directory)
             and len(os.listdir(version_directory)) != 0
@@ -94,7 +94,7 @@ def install_ihp(build_directory, pdk_root, version):
             it = 0
             while os.path.exists(backup_path) and len(os.listdir(backup_path)) != 0:
                 it += 1
-                backup_path = Version(f"{version}.bk{it}", "ihp_sg13g2").get_dir(
+                backup_path = Version(f"{version}.bk{it}", "ihp-sg13g2").get_dir(
                     pdk_root
                 )
             console.log(
@@ -132,7 +132,7 @@ def build(
         using_repos = {}
 
     build_directory = os.path.join(
-        get_ciel_dir(pdk_root, "ihp_sg13g2"), "build", version
+        get_ciel_dir(pdk_root, "ihp-sg13g2"), "build", version
     )
     timestamp = datetime.now().strftime("build_ihp-sg13g2-%Y-%m-%d-%H-%M-%S")
     log_dir = os.path.join(build_directory, "logs", timestamp)

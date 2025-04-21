@@ -43,8 +43,8 @@ def mkdirp(path):
 # -- API Variables
 
 # -- PDK Root Management
-VOLARE_DEFAULT_HOME = os.path.join(os.path.expanduser("~"), ".ciel")
-VOLARE_RESOLVED_HOME = os.getenv("PDK_ROOT") or VOLARE_DEFAULT_HOME
+CIEL_DEFAULT_HOME = os.path.join(os.path.expanduser("~"), ".ciel")
+CIEL_RESOLVED_HOME = os.getenv("PDK_ROOT") or CIEL_DEFAULT_HOME
 
 
 def _get_current_version(pdk_root: str, pdk: str) -> Optional[str]:
@@ -61,7 +61,7 @@ def _get_current_version(pdk_root: str, pdk: str) -> Optional[str]:
 
 
 def get_ciel_home(pdk_root: Optional[str] = None) -> str:
-    return pdk_root or VOLARE_RESOLVED_HOME
+    return pdk_root or CIEL_RESOLVED_HOME
 
 
 def get_ciel_dir(pdk_root: str, pdk: str) -> str:
@@ -70,6 +70,63 @@ def get_ciel_dir(pdk_root: str, pdk: str) -> str:
 
 def get_versions_dir(pdk_root: str, pdk: str) -> str:
     return os.path.join(get_ciel_dir(pdk_root, pdk), "versions")
+
+
+def resolve_pdk_family(selector: Optional[str]):
+    """
+    :returns:
+        If selector is a valid PDK family, the same string.
+
+        If selector is a valid PDK variant, the family the variant belongs to.
+
+        If selector is None, the PDK_FAMILY and PDK environment variables are
+        used as fallbacks. If all are None, the function will simply return None.
+
+        If the selector is invalid, a ValueError will be raised. "ihp_sg13g2"
+        will resolve to "ihp-sg13g2" however for some semblance of backwards
+        compatibility with previous versions of Ciel/Volare.
+    """
+    selector = selector or os.getenv("PDK_FAMILY") or os.getenv("PDK")
+    if selector is None:
+        return None  # Let click validator handle it
+
+    if selector == "ihp_sg13g2":
+        selector = "ihp-sg13g2"
+
+    if selector in Family.by_name:
+        return selector
+
+    for pdk_family in Family.by_name.values():
+        if selector in pdk_family.variants:
+            return pdk_family.name
+
+    raise ValueError(f"'{selector}' is not a valid PDK family or variant.")
+
+
+def resolve_pdk_variant(selector: Optional[str]):
+    """
+    :returns:
+        If selector is a valid PDK variant, the same string.
+
+        If selector is a valid PDK family, the default variant of said PDK.
+
+        If selector is None, the PDK environment variables is used as a
+        fallback. If all are None, the function will simply return None.
+
+        If the selector is invalid, a ValueError will be raised.
+    """
+    selector = selector or os.getenv("PDK")
+    if selector is None:
+        return None
+
+    if family := Family.by_name.get(selector):
+        return family.default_variant
+
+    for pdk_family in Family.by_name.values():
+        if selector in pdk_family.variants:
+            return selector
+
+    raise ValueError(f"'{selector}' is not a valid PDK family or variant.")
 
 
 @dataclass
