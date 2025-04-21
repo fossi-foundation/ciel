@@ -19,7 +19,6 @@ import os
 import shutil
 import pathlib
 from datetime import datetime
-from rich.console import Console
 from dataclasses import dataclass
 from typing import Optional, List
 
@@ -73,26 +72,61 @@ def get_versions_dir(pdk_root: str, pdk: str) -> str:
     return os.path.join(get_ciel_dir(pdk_root, pdk), "versions")
 
 
-def get_pdk_family_from_pdk(pdk):
-    if pdk is None:
-        return None
+def resolve_pdk_family(selector: Optional[str]):
+    """
+    :returns:
+        If selector is a valid PDK family, the same string.
+
+        If selector is a valid PDK variant, the family the variant belongs to.
+
+        If selector is None, the PDK_FAMILY and PDK environment variables are
+        used as fallbacks. If all are None, the function will simply return None.
+
+        If the selector is invalid, a ValueError will be raised. "ihp_sg13g2"
+        will resolve to "ihp-sg13g2" however for some semblance of backwards
+        compatibility with previous versions of Ciel/Volare.
+    """
+    selector = selector or os.getenv("PDK_FAMILY") or os.getenv("PDK")
+    if selector is None:
+        return None  # Let click validator handle it
+
+    if selector == "ihp_sg13g2":
+        selector = "ihp-sg13g2"
+
+    if selector in Family.by_name:
+        return selector
 
     for pdk_family in Family.by_name.values():
-        if pdk in pdk_family.variants:
+        if selector in pdk_family.variants:
             return pdk_family.name
 
-    return None
+    raise ValueError(f"'{selector}' is not a valid PDK family or variant.")
 
 
-def print_available_pdk_families():
-    families = [family for family in Family.by_name]
+def resolve_pdk_variant(selector: Optional[str]):
+    """
+    :returns:
+        If selector is a valid PDK variant, the same string.
 
-    console = Console()
-    console.print(
-        "Please specify a pdk family using either '--pdk-family' or the 'PDK_FAMILY' environment variable.\n"
-        "Ciel also considers the 'PDK' environment variable and tries to find the corresponding pdk family."
-    )
-    console.print(f"The following pdk families are supported: {', '.join(families)}")
+        If selector is a valid PDK family, the default variant of said PDK.
+
+        If selector is None, the PDK environment variables is used as a
+        fallback. If all are None, the function will simply return None.
+
+        If the selector is invalid, a ValueError will be raised.
+    """
+    selector = selector or os.getenv("PDK")
+    if selector is None:
+        return None
+
+    if family := Family.by_name.get(selector):
+        return family.default_variant
+
+    for pdk_family in Family.by_name.values():
+        if selector in pdk_family.variants:
+            return selector
+
+    raise ValueError(f"'{selector}' is not a valid PDK family or variant.")
 
 
 @dataclass

@@ -15,26 +15,42 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
 from functools import partial
-from typing import Callable
+from typing import Callable, Optional
 
 import click
 
 from .common import (
     CIEL_RESOLVED_HOME,
-    get_pdk_family_from_pdk,
+    resolve_pdk_family,
 )
+from .families import Family
 
 opt = partial(click.option, show_default=True)
+
+
+def pdk_cb(
+    ctx: click.Context,
+    param: click.Parameter,
+    value: Optional[str],
+):
+    try:
+        resolved = resolve_pdk_family(value)
+    except ValueError as e:
+        raise click.BadParameter(str(e), ctx, param)
+    if resolved is None:
+        raise click.BadParameter(
+            f"A PDK family or variant must be specified. The following families are supported: {', '.join(Family.by_name)}"
+        )
 
 
 def opt_pdk_root(function: Callable):
     function = opt(
         "--pdk-family",
-        required=False,
-        default=os.getenv("PDK_FAMILY") or get_pdk_family_from_pdk(os.getenv("PDK")),
-        help="The PDK family to install. If a pdk name is given, ciel attempts to find the corresponding pdk family.",
+        "--pdk",
+        required=False,  # Requirement handled by callback
+        callback=pdk_cb,
+        help="A valid PDK family or variant (the latter of which is resolved to a family).",
     )(function)
     function = opt(
         "--pdk-root",

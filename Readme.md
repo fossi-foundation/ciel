@@ -50,7 +50,7 @@ In its current inception, ciel supports builds of **sky130** and **gf180mcu** PD
 |-|-|-|
 |sky130_fd_io|gf180mcu_fd_io|sg13g2_io|
 |sky130_fd_pr|gf180mcu_fd_pr|sg13g2_pr|
-|sky130_fd_pr_reram$|gf180mcu_fd_pr|sg13g2_pr|
+|sky130_fd_pr_reram|gf180mcu_fd_pr|sg13g2_pr|
 |sky130_fd_sc_hd|gf180mcu_fd_sc_mcu7t5v0|sg13g2_stdcell|
 |sky130_ml_xx_hd|gf180mcu_fd_sc_mcu9t5v0|-|
 |sky130_fd_sc_hvl|gf180mcu_osu_sc_gp9t3v3|-|

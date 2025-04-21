@@ -27,7 +27,6 @@ from .common import (
     Version,
     get_ciel_home,
     resolve_version,
-    print_available_pdk_families,
 )
 from .click_common import (
     opt_pdk_root,
@@ -55,9 +54,6 @@ def output_cmd(pdk_root, pdk_family):
     unembellished, or, if no current version is enabled, an empty output with an
     exit code of 1.
     """
-    if pdk_family is None:
-        print_available_pdk_families()
-        exit(-1)
 
     version = Version.get_current(pdk_root, pdk_family)
     if sys.stdout.isatty():
@@ -88,9 +84,6 @@ def output_cmd(pdk_root, pdk_family):
 )
 def prune_cmd(pdk_root, pdk_family):
     """Removes all PDKs other than, if it exists, the one currently in use."""
-    if pdk_family is None:
-        print_available_pdk_families()
-        exit(-1)
 
     pdk_versions = Version.get_all_installed(pdk_root, pdk_family)
     for version in pdk_versions:
@@ -115,9 +108,6 @@ def prune_cmd(pdk_root, pdk_family):
 @click.argument("version", required=False)
 def rm_cmd(pdk_root, pdk_family, version):
     """Removes the PDK version specified."""
-    if pdk_family is None:
-        print_available_pdk_families()
-        exit(-1)
 
     version_object = Version(version, pdk_family)
     try:
@@ -134,9 +124,6 @@ def rm_cmd(pdk_root, pdk_family, version):
 @opt_pdk_root
 def list_cmd(data_source, pdk_root, pdk_family):
     """Lists PDK versions that are locally installed. JSON if not outputting to a tty."""
-    if pdk_family is None:
-        print_available_pdk_families()
-        exit(-1)
 
     pdk_versions = Version.get_all_installed(pdk_root, pdk_family)
 
@@ -159,10 +146,6 @@ def list_cmd(data_source, pdk_root, pdk_family):
 @opt_pdk_root
 def list_remote_cmd(data_source, pdk_root, pdk_family):
     """Lists PDK versions that are remotely available. JSON if not outputting to a tty."""
-
-    if pdk_family is None:
-        print_available_pdk_families()
-        exit(-1)
 
     try:
         pdk_versions = data_source.get_available_versions(pdk_family)
@@ -209,10 +192,6 @@ def path_cmd(pdk_root, pdk_family, version):
     version instead.
     """
     if version is not None:
-        if pdk_family is None:
-            print_available_pdk_families()
-            exit(-1)
-
         version = Version(version, pdk_family)
         print(version.get_dir(pdk_root), end="")
     else:
@@ -255,9 +234,6 @@ def enable_cmd(
     tools with a tool_metadata.yml file, for example OpenLane or DFFRAM,
     the appropriate version will be enabled automatically.
     """
-    if pdk_family is None:
-        print_available_pdk_families()
-        exit(-1)
 
     if include_libraries == ():
         include_libraries = None
@@ -320,9 +296,6 @@ def fetch_cmd(
     tools with a tool_metadata.yml file, for example OpenLane or DFFRAM,
     the appropriate version will be enabled automatically.
     """
-    if pdk_family is None:
-        print_available_pdk_families()
-        exit(-1)
 
     if include_libraries == ():
         include_libraries = None
