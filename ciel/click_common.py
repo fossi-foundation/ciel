@@ -42,6 +42,7 @@ def pdk_cb(
         raise click.BadParameter(
             f"A PDK family or variant must be specified. The following families are supported: {', '.join(Family.by_name)}"
         )
+    return resolved
 
 
 def opt_pdk_root(function: Callable):
