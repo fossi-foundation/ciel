@@ -100,10 +100,10 @@ def opt_build(function: Callable):
 
 
 def opt_push(function: Callable):
-    function = opt("-o", "--owner", default="efabless", help="Repository Owner")(
-        function
-    )
-    function = opt("-r", "--repository", default="volare", help="Repository")(function)
+    function = opt(
+        "-o", "--owner", default="fossi-foundation", help="Repository Owner"
+    )(function)
+    function = opt("-r", "--repository", default="ciel", help="Repository")(function)
     function = opt(
         "--pre/--prod", default=False, help="Push as pre-release or production"
     )(function)
