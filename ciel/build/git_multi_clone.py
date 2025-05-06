@@ -64,6 +64,7 @@ class Repository(object):
             ["git", "clone", "--progress", self.url, self.path],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            text=True,
         )
         assert process.stderr is not None
 
@@ -72,10 +73,9 @@ class Repository(object):
         # Python Moment
         buffer = ""
         while True:
-            bytes_read = process.stderr.read(1)
-            if len(bytes_read) == 0:
+            char_read = process.stderr.read(1)
+            if len(char_read) == 0:
                 break
-            char_read = bytes_read.decode("utf8")
             if char_read in ["\n", "\r"]:
                 match = ro_rx.search(buffer)
                 if match is not None:
@@ -107,6 +107,7 @@ class Repository(object):
             cwd=self.path,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            text=True,
         )
         assert process.stderr is not None
         callback(0, f"Updating {self.name} at {self.path}…")
@@ -116,10 +117,9 @@ class Repository(object):
         # Python Moment #2
         buffer = ""
         while True:
-            bytes_read = process.stderr.read(1)
-            if len(bytes_read) == 0:
+            char_read = process.stderr.read(1)
+            if len(char_read) == 0:
                 break
-            char_read = bytes_read.decode("utf8")
             if char_read in ["\n", "\r"]:
                 match = ro_rx.search(buffer)
                 if match is not None:
@@ -162,6 +162,7 @@ class Repository(object):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             cwd=self.path,
+            text=True
         )
 
         ro_rx = re.compile(r"Receiving objects:\s*(\d+)%")
@@ -171,10 +172,9 @@ class Repository(object):
         # Python Moment #3
         buffer = ""
         while True:
-            bytes_read = process.stderr.read(1)
-            if len(bytes_read) == 0:
+            char_read = process.stderr.read(1)
+            if len(char_read) == 0:
                 break
-            char_read = bytes_read.decode("utf8")
             if char_read in ["\n", "\r"]:
                 match = ro_rx.search(buffer)
                 if match is not None:
