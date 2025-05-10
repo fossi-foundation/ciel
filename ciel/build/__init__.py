@@ -221,9 +221,7 @@ def push(
                 "-commitish",
                 "releases",
                 "-replace",
-            ]
-            + (["-prerelease"] if pre else [])
-            + [
+                *(["-prerelease"] * pre),  # https://discuss.python.org/t/the-precedence-of-unpack-operators/25854/2
                 tag,
                 tarball_path,
             ]
