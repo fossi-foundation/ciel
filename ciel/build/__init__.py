@@ -50,7 +50,7 @@ from ..families import Family
 
 def build(
     pdk_root: str,
-    pdk: str,
+    pdk_family: str,
     version: str,
     jobs: int = 1,
     sram: bool = True,  # Deprecated
@@ -64,8 +64,8 @@ def build(
             name, path = repo.split("=")
             use_repos[name] = os.path.abspath(path)
 
-    if pdk not in Family.by_name:
-        raise Exception(f"Unsupported PDK family '{pdk}'.")
+    if pdk_family not in Family.by_name:
+        raise Exception(f"Unsupported PDK family '{pdk_family}'.")
 
     kwargs = {
         "pdk_root": pdk_root,
@@ -76,7 +76,7 @@ def build(
         "using_repos": use_repos,
     }
 
-    build_module = importlib.import_module(f".{pdk}", package=__name__)
+    build_module = importlib.import_module(f".{pdk_family}", package=__name__)
     build_function = build_module.build
     build_function(**kwargs)
 
@@ -97,7 +97,7 @@ def build_cmd(
     include_libraries,
     jobs,
     pdk_root,
-    pdk,
+    pdk_family,
     clear_build_artifacts,
     tool_metadata_file_path,
     version,
@@ -124,7 +124,7 @@ def build_cmd(
 
     build(
         pdk_root=pdk_root,
-        pdk=pdk,
+        pdk_family=pdk_family,
         version=version,
         jobs=jobs,
         clear_build_artifacts=clear_build_artifacts,
@@ -135,7 +135,7 @@ def build_cmd(
 
 def push(
     pdk_root,
-    pdk,
+    pdk_family,
     version,
     *,
     owner,
@@ -143,7 +143,7 @@ def push(
     pre=False,
     push_libraries=None,
 ):
-    family = Family.by_name[pdk]
+    family = Family.by_name[pdk_family]
 
     session = GitHubSession()
     if session.github_token is None:
@@ -155,7 +155,7 @@ def push(
         push_libraries = family.all_libraries
     library_list = set(push_libraries)
 
-    version_object = Version(version, pdk)
+    version_object = Version(version, pdk_family)
     version_directory = version_object.get_dir(pdk_root)
     if not os.path.isdir(version_directory):
         raise FileNotFoundError(f"Version {version} not found.")
@@ -196,15 +196,15 @@ def push(
             progress.remove_task(task)
             final_tarballs.append(tarball_path)
 
-    tag = f"{pdk}-{version}"
+    tag = f"{pdk_family}-{version}"
 
     # If someone wants to rewrite this to not use ghr, please, by all means.
     console.log("Starting upload…")
 
-    body = f"{pdk} variants built using ciel"
+    body = f"{pdk_family} variants built using ciel"
     date = get_commit_date(version, family.repo, session)
     if date is not None:
-        body = f"{pdk} variants (released on {date_to_iso8601(date)})"
+        body = f"{pdk_family} variants (released on {date_to_iso8601(date)})"
 
     for tarball_path in final_tarballs:
         subprocess.check_call(
@@ -221,9 +221,7 @@ def push(
                 "-commitish",
                 "releases",
                 "-replace",
-            ]
-            + (["-prerelease"] if pre else [])
-            + [
+                *(["-prerelease"] * pre),  # https://discuss.python.org/t/the-precedence-of-unpack-operators/25854/2
                 tag,
                 tarball_path,
             ]
@@ -241,7 +239,7 @@ def push_cmd(
     repository,
     pre,
     pdk_root,
-    pdk,
+    pdk_family,
     version,
     push_libraries,
 ):
@@ -256,7 +254,7 @@ def push_cmd(
     try:
         push(
             pdk_root,
-            pdk,
+            pdk_family,
             version,
             owner=owner,
             repository=repository,
