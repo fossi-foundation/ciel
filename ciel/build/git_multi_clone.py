@@ -162,7 +162,7 @@ class Repository(object):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             cwd=self.path,
-            text=True
+            text=True,
         )
 
         ro_rx = re.compile(r"Receiving objects:\s*(\d+)%")

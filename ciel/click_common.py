@@ -101,9 +101,17 @@ def opt_build(function: Callable):
 
 def opt_push(function: Callable):
     function = opt(
-        "-o", "--owner", default="fossi-foundation", help="Repository Owner"
+        "-o",
+        "--owner",
+        default="fossi-foundation",
+        help="Artifact Upload Repository Owner",
     )(function)
-    function = opt("-r", "--repository", default="ciel-releases", help="Repository")(function)
+    function = opt(
+        "-r",
+        "--repository",
+        default="ciel-releases",
+        help="Artifact Upload Repository",
+    )(function)
     function = opt(
         "--pre/--prod", default=False, help="Push as pre-release or production"
     )(function)
