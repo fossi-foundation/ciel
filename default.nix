@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 {
+  flake ? null,
   lib,
   buildPythonPackage,
   click,
@@ -28,7 +29,7 @@ buildPythonPackage {
   version = (builtins.fromTOML (builtins.readFile ./pyproject.toml)).tool.poetry.version;
   format = "pyproject";
 
-  src = ./.;
+  src = if (flake != null) then flake else ./.;
   doCheck = false;
 
   nativeBuildInputs = [

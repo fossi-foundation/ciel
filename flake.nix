@@ -28,7 +28,9 @@
       default = nix-eda.composePythonOverlay (pkgs': pkgs: pypkgs': pypkgs: let
         callPythonPackage = lib.callPackageWith (pkgs' // pkgs'.python3.pkgs);
       in {
-        ciel = callPythonPackage ./default.nix {};
+        ciel = callPythonPackage ./default.nix {
+          flake = self;
+        };
       });
     };
 
