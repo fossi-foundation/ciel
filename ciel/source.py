@@ -147,7 +147,10 @@ class StaticWebDataSource(DataSource):
                 ) from None
             else:
                 raise e from None
-        manifest = req.json()
+        try:
+            manifest = req.json()
+        except ValueError as e:
+            raise ValueError(f"Request {req.url} returned invalid JSON: {e}") from None
 
         versions = []
         for version in manifest["versions"]:
@@ -179,7 +182,11 @@ class StaticWebDataSource(DataSource):
                 ) from None
             else:
                 raise e from None
-        manifest = req.json()
+        try:
+            manifest = req.json()
+        except ValueError as e:
+            raise ValueError(f"Request {req.url} returned invalid JSON: {e}") from None
+
         assets = []
         for asset in manifest["assets"]:
             assets.append(Asset(**asset))

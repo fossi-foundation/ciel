@@ -141,7 +141,10 @@ class GitHubSession(httpx.Client):
         url = repo.api + endpoint
         req = self.request(method, url, *args, **kwargs)
         req.raise_for_status()
-        return req.json()
+        try:
+            return req.json()
+        except ValueError as e:
+            raise ValueError(f"Request {req.url} returned invalid JSON: {e}") from None
 
     @classmethod
     def get_user_agent(Self) -> str:
