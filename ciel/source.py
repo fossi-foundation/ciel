@@ -70,7 +70,7 @@ class GitHubReleasesDataSource(DataSource):
                 self.repo,
                 "/releases",
                 "get",
-                params={"page": 1, "per_page": 100},
+                params={"page": page, "per_page": 100},
             )
             releases += last
 
