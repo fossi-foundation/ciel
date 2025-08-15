@@ -17,8 +17,8 @@
 # limitations under the License.
 import sys
 import json
+import shutil
 
-import yaml
 import httpx
 import click
 from rich.console import Console
@@ -332,13 +332,27 @@ def fetch_cmd(
 
 @click.command("ls-pdks")
 def list_pdks_cmd():
+    """Lists PDK families and variants. JSON if not outputting to a tty"""
     result = {}
-    for family in Family.by_name.values():
-        result[family.name] = family.variants
-    print(yaml.dump(result), end="")
+    if sys.stdout.isatty():
+        console = Console()
+        for family in Family.by_name.values():
+            console.print(f"[bold]{family.name}")
+            for variant in family.variants:
+                console.print(
+                    f"- {variant}{" (default)" * (variant == family.default_variant)}"
+                )
+    else:
+        for family in Family.by_name.values():
+            result[family.name] = family.variants
+        print(json.dumps(result), end="")
 
 
-@click.group()
+@click.group(
+    context_settings={
+        "max_content_width": max(shutil.get_terminal_size().columns, 80),
+    }
+)
 @click.version_option(
     __version__,
     message="""Ciel v%(version)s ©2022-2025 Efabless Corporation and Contributors

@@ -71,7 +71,7 @@ def arg_version(f):
 
 class PDKOption(click.Option):
     def get_usage_pieces(self, ctx):
-        return ["<--pdk-family PDK_FAMILY>"]
+        return [f"<--pdk-family {'|'.join(Family.by_name)}>"]
 
     def process_value(self, ctx: click.Context, value):
         value = self.type_cast_value(ctx, value)
