@@ -18,10 +18,11 @@
 import io
 import os
 import shutil
+import hashlib
 import tarfile
 import tempfile
 import warnings
-from typing import Iterable, List, Optional, Union
+from typing import Dict, Iterable, List, Optional, Union
 
 import rich
 import httpx
@@ -352,3 +353,37 @@ def enable(
 def get(*args, **kwargs):
     warnings.warn("get() has been deprecated: use fetch()")
     return fetch(*args, **kwargs)
+
+
+def optimize(pdk_root, version_object: Version):
+    if os.name != "posix":
+        return 0
+    version_directory = version_object.get_dir(pdk_root)
+
+    if not os.path.isdir(version_directory):
+        raise NotADirectoryError(version_directory)
+
+    family = Family.by_name[version_object.pdk]
+
+    paths_by_hash: Dict[str, str] = {}
+    duplicate_bytes = 0
+    for variant in family.variants:
+        for dirname, _, files in os.walk(os.path.join(version_directory, variant)):
+            for file in files:
+                path = os.path.join(dirname, file)
+                if os.path.islink(path):
+                    continue
+                file_hash = hashlib.sha256()
+                with open(path, "rb") as f:
+                    data = f.read(1 << 16)
+                    file_hash.update(data)
+                digest = file_hash.hexdigest()
+                if digest in paths_by_hash:
+                    duplicate_bytes += os.path.getsize(path)
+                    twin = paths_by_hash[digest]
+                    os.unlink(path)
+                    twin_rel = os.path.relpath(twin, dirname)
+                    os.symlink(twin_rel, path)
+                else:
+                    paths_by_hash[digest] = path
+    return duplicate_bytes

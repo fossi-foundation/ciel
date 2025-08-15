@@ -23,34 +23,83 @@ import click
 from .common import (
     CIEL_RESOLVED_HOME,
     resolve_pdk_family,
+    resolve_version,
 )
 from .families import Family
 
 opt = partial(click.option, show_default=True)
 
 
-def pdk_cb(
-    ctx: click.Context,
-    param: click.Parameter,
-    value: Optional[str],
-):
-    try:
-        resolved = resolve_pdk_family(value)
-    except ValueError as e:
-        raise click.BadParameter(str(e), ctx, param)
-    if resolved is None:
-        raise click.BadParameter(
-            f"A PDK family or variant must be specified. The following families are supported: {', '.join(Family.by_name)}"
-        )
-    return resolved
+class VersionArgument(click.Argument):
+    def make_metavar(self):
+        return "<VERSION>"
+
+    def set_tool_metadata_file_path(
+        self,
+        ctx: click.Context,
+        param: click.Parameter,
+        value: Optional[str],
+    ):
+        self.tool_metadata_file_path = value
+
+    def process_value(self, ctx, value):
+        try:
+            tool_metadata_file_path = None
+            if "tool_metadata_file_path" in ctx.params:
+                tool_metadata_file_path = ctx.params["tool_metadata_file_path"]
+                del ctx.params["tool_metadata_file_path"]
+            resolved = resolve_version(value, tool_metadata_file_path)
+        except FileNotFoundError:
+            resolved = None
+        return super().process_value(ctx, resolved)
+
+
+def arg_version(f):
+    version_param = VersionArgument(["version"], required=True)
+    f = click.option(
+        "-f",
+        "--metadata-file",
+        "tool_metadata_file_path",
+        default=None,
+        expose_value=False,
+        callback=version_param.set_tool_metadata_file_path,
+        help="Explicitly define a tool metadata file instead of searching for a metadata file",
+    )(f)
+    f.__click_params__.append(version_param)
+    return f
+
+
+class PDKOption(click.Option):
+    def get_usage_pieces(self, ctx):
+        return [f"<--pdk-family {'|'.join(Family.by_name)}>"]
+
+    def process_value(self, ctx: click.Context, value):
+        value = self.type_cast_value(ctx, value)
+
+        if self.required and self.value_is_missing(value):
+            raise click.MissingParameter(
+                message=f"A PDK family or variant must be specified. The following families are supported: {', '.join(Family.by_name)}",
+                ctx=ctx,
+                param=self,
+            )
+
+        if self.callback is not None:
+            value = self.callback(ctx, self, value)
+
+        try:
+            resolved = resolve_pdk_family(value)
+        except ValueError as e:
+            raise click.BadParameter(str(e), ctx=ctx, param=self)
+
+        return resolved
 
 
 def opt_pdk_root(function: Callable):
     function = opt(
         "--pdk-family",
         "--pdk",
-        required=False,  # Requirement handled by callback
-        callback=pdk_cb,
+        cls=PDKOption,
+        required=True,
         help="A valid PDK family or variant (the latter of which is resolved to a family).",
     )(function)
     function = opt(

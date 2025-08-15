@@ -37,13 +37,13 @@ from ..github import (
 from ..common import (
     Version,
     mkdirp,
-    resolve_version,
     date_to_iso8601,
 )
 from ..click_common import (
     opt_push,
     opt_build,
     opt_pdk_root,
+    arg_version,
 )
 from ..families import Family
 
@@ -85,21 +85,13 @@ def build(
 @opt_github_token
 @opt_pdk_root
 @opt_build
-@click.option(
-    "-f",
-    "--metadata-file",
-    "tool_metadata_file_path",
-    default=None,
-    help="Explicitly define a tool metadata file instead of searching for a metadata file",
-)
-@click.argument("version", required=False)
+@arg_version
 def build_cmd(
     include_libraries,
     jobs,
     pdk_root,
     pdk_family,
     clear_build_artifacts,
-    tool_metadata_file_path,
     version,
     use_repo_at,
 ):
@@ -114,13 +106,6 @@ def build_cmd(
     """
     if include_libraries == ():
         include_libraries = None
-
-    console = Console()
-    try:
-        version = resolve_version(version, tool_metadata_file_path)
-    except Exception as e:
-        console.print(f"Could not determine open_pdks version: {e}")
-        exit(-1)
 
     build(
         pdk_root=pdk_root,

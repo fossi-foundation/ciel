@@ -17,8 +17,9 @@
 # limitations under the License.
 import sys
 import json
-import httpx
+import shutil
 
+import httpx
 import click
 from rich.console import Console
 
@@ -26,16 +27,17 @@ from .__version__ import __version__
 from .common import (
     Version,
     get_ciel_home,
-    resolve_version,
 )
 from .click_common import (
     opt_pdk_root,
+    arg_version,
 )
 from .manage import (
     print_installed_list,
     print_remote_list,
     enable,
     fetch,
+    optimize,
 )
 from .build import (
     build_cmd,
@@ -43,6 +45,7 @@ from .build import (
 )
 from .github import opt_github_token
 from .source import opt_data_source
+from .families import Family
 
 
 @click.command("output")
@@ -83,7 +86,7 @@ def output_cmd(pdk_root, pdk_family):
     prompt="Are you sure? This will delete all non-enabled versions of the PDK from your computer.",
 )
 def prune_cmd(pdk_root, pdk_family):
-    """Removes all PDKs other than, if it exists, the one currently in use."""
+    """Removes all PDKs other than, if it exists, the one currently set as 'enabled' in the PDK root."""
 
     pdk_versions = Version.get_all_installed(pdk_root, pdk_family)
     for version in pdk_versions:
@@ -96,6 +99,48 @@ def prune_cmd(pdk_root, pdk_family):
             print(f"Failed to delete {version}: {e}", file=sys.stderr)
 
 
+@click.command("optimize")
+@opt_pdk_root
+@arg_version
+def optimize_cmd(pdk_root, pdk_family, version):
+    """
+    [Experimental] This command attempts to save space by converting identical
+    files across variants for the specified version to symbolic links.
+
+    This will save space for some items such as GDS and LIB files, but may have
+    some side effects with your own tools. Use at your own discretion.
+
+    Requires a POSIX or POSIX-compatible operating system.
+    """
+
+    recovered = optimize(pdk_root, Version(version, pdk_family))
+
+    console = Console()
+    console.print(f"[bold]{recovered / (1 << 20):.2f}[/bold] MiB recovered.")
+
+
+@click.command("optimize-all")
+@opt_pdk_root
+def optimize_all_cmd(pdk_root, pdk_family):
+    """
+    [Experimental] This command attempts to save space by converting identical
+    files across variants for all versions of a specific PDK family to symbolic
+    links.
+
+    This will save space for some items such as GDS and LIB files, but may have
+    some side effects with your own tools. Use at your own discretion.
+
+    Requires a POSIX or POSIX-compatible operating system.
+    """
+
+    recovered = 0
+    for version in Version.get_all_installed(pdk_root, pdk_family):
+        recovered += optimize(pdk_root, version)
+
+    console = Console()
+    console.print(f"[bold]{recovered / (1 << 20):.2f}[/bold] MiB recovered.")
+
+
 @click.command("rm")
 @opt_pdk_root
 @click.option(
@@ -105,7 +150,7 @@ def prune_cmd(pdk_root, pdk_family):
     expose_value=False,
     prompt="Are you sure? This will delete this version of the PDK from your computer.",
 )
-@click.argument("version", required=False)
+@arg_version
 def rm_cmd(pdk_root, pdk_family, version):
     """Removes the PDK version specified."""
 
@@ -183,7 +228,7 @@ def list_remote_cmd(data_source, pdk_root, pdk_family):
 
 @click.command("path")
 @opt_pdk_root
-@click.argument("version", required=False)
+@arg_version
 def path_cmd(pdk_root, pdk_family, version):
     """
     Prints the path of the ciel PDK root.
@@ -203,47 +248,28 @@ def path_cmd(pdk_root, pdk_family, version):
 @opt_github_token
 @opt_pdk_root
 @click.option(
-    "-f",
-    "--metadata-file",
-    "tool_metadata_file_path",
-    default=None,
-    help="Explicitly define a tool metadata file instead of searching for a metadata file",
-)
-@click.option(
     "-l",
     "--include-libraries",
     multiple=True,
     default=None,
-    help="Libraries to include. You can use -l multiple times to include multiple libraries. Pass 'all' to include all of them. A default of 'None' uses a default set for the particular PDK.",
+    help="Libraries to include. You can use  l multiple times to include multiple libraries. Pass 'all' to include all of them. A default of 'None' uses a default set for the particular PDK.",
 )
-@click.argument("version", required=False)
+@arg_version
 def enable_cmd(
     data_source,
     pdk_root,
     pdk_family,
-    tool_metadata_file_path,
     version,
     include_libraries,
 ):
     """
     Activates a given installed PDK version.
-
-    Parameters: <version> (Optional)
-
-    If a version is not given, and you run this in the top level directory of
-    tools with a tool_metadata.yml file, for example OpenLane or DFFRAM,
-    the appropriate version will be enabled automatically.
     """
 
     if include_libraries == ():
         include_libraries = None
 
     console = Console()
-    try:
-        version = resolve_version(version, tool_metadata_file_path)
-    except Exception as e:
-        console.print(f"Could not determine open_pdks version: {e}")
-        exit(-1)
 
     try:
         enable(
@@ -264,48 +290,29 @@ def enable_cmd(
 @opt_github_token
 @opt_pdk_root
 @click.option(
-    "-f",
-    "--metadata-file",
-    "tool_metadata_file_path",
-    default=None,
-    help="Explicitly define a tool metadata file instead of searching for a metadata file",
-)
-@click.option(
     "-l",
     "--include-libraries",
     multiple=True,
     default=None,
     help="Libraries to include. You can use -l multiple times to include multiple libraries. Pass 'all' to include all of them. A default of 'None' uses a default set for the particular PDK.",
 )
-@click.argument("version", required=False)
+@arg_version
 def fetch_cmd(
     data_source,
     pdk_root,
     pdk_family,
-    tool_metadata_file_path,
     version,
     include_libraries,
 ):
     """
     Fetches a PDK to Ciel's store without setting it as the "enabled" version
     in ``PDK_ROOT``.
-
-    Parameters: <version> (Optional)
-
-    If a version is not given, and you run this in the top level directory of
-    tools with a tool_metadata.yml file, for example OpenLane or DFFRAM,
-    the appropriate version will be enabled automatically.
     """
 
     if include_libraries == ():
         include_libraries = None
 
     console = Console()
-    try:
-        version = resolve_version(version, tool_metadata_file_path)
-    except Exception as e:
-        console.print(f"Could not determine open_pdks version: {e}")
-        exit(-1)
 
     try:
         version = fetch(
@@ -323,7 +330,29 @@ def fetch_cmd(
         exit(-1)
 
 
-@click.group()
+@click.command("ls-pdks")
+def list_pdks_cmd():
+    """Lists PDK families and variants. JSON if not outputting to a tty"""
+    result = {}
+    if sys.stdout.isatty():
+        console = Console()
+        for family in Family.by_name.values():
+            console.print(f"[bold]{family.name}")
+            for variant in family.variants:
+                console.print(
+                    f"- {variant}{" (default)" * (variant == family.default_variant)}"
+                )
+    else:
+        for family in Family.by_name.values():
+            result[family.name] = family.variants
+        print(json.dumps(result), end="")
+
+
+@click.group(
+    context_settings={
+        "max_content_width": max(shutil.get_terminal_size().columns, 80),
+    }
+)
 @click.version_option(
     __version__,
     message="""Ciel v%(version)s ©2022-2025 Efabless Corporation and Contributors
@@ -345,6 +374,8 @@ def cli():
 
 
 cli.add_command(output_cmd)
+cli.add_command(optimize_cmd)
+cli.add_command(optimize_all_cmd)
 cli.add_command(prune_cmd)
 cli.add_command(rm_cmd)
 cli.add_command(build_cmd)
@@ -354,6 +385,7 @@ cli.add_command(list_cmd)
 cli.add_command(list_remote_cmd)
 cli.add_command(enable_cmd)
 cli.add_command(fetch_cmd)
+cli.add_command(list_pdks_cmd)
 
 try:
     import ssl  # noqa: F401

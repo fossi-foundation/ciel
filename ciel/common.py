@@ -204,7 +204,7 @@ class Version(object):
 
 def resolve_version(
     version: Optional[str],
-    tool_metadata_file_path: Optional[str],
+    tool_metadata_file_path: Optional[str] = None,
 ) -> str:
     """
     Takes an optional version and tool_metadata_file_path.
