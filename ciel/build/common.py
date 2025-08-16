@@ -12,22 +12,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import re
 import shutil
 import subprocess
 
 from ciel.github import GitHubSession
 
 
-def open_pdks_fix_makefile(at_path: str):
-    backup_path = f"{at_path}.bak"
+def get_backup_path(at_path: str):
+    backup_path = at_path
+    ctr = -1
+    while os.path.exists(backup_path):
+        ctr += 1
+        postfix = f".bak{str(ctr) * bool(ctr)}"
+        backup_path = f"{at_path}{postfix}"
+    return backup_path
+
+
+def open_pdks_fix_makefile_provenance(at_path: str):
+    backup_path = get_backup_path(at_path)
     shutil.move(at_path, backup_path)
 
     fix_fi = False
 
+    unpatched_rx = re.compile(r"[^$]\${(\w+)_COMMIT\}")
+
     with open(backup_path, "r") as file_in, open(at_path, "w") as file_out:
         for line in file_in:
+            # This patch makes it so the subshells parse this as an assignment
+            # and not as a command. (a=b valid, a = b not valid)
             if "_COMMIT = `" in line:
                 line = line.replace("_COMMIT = ", "_COMMIT=")
+            # This patch makes it so the _COMMIT assignment is propagated to
+            # the next if block instead of the next if block being run in
+            # another subshell.
             if fix_fi:
                 file_out.write(line.replace("fi", "fi ; \\"))
                 fix_fi = False
@@ -35,6 +53,21 @@ def open_pdks_fix_makefile(at_path: str):
                 file_out.write(line)
             if "_COMMIT=`" in line:
                 fix_fi = True
+            # This patch fixes the _COMMIT interpolation being at the Makefile
+            # level rather than the shell level.
+            if "download.sh" in line:
+                file_out.write(unpatched_rx.sub(r" $${\1_COMMIT}", line))
+            else:
+                file_out.write(line)
+
+
+def open_pdks_patch_gnu_sed(at_path: str):
+    backup_path = get_backup_path(at_path)
+    shutil.move(at_path, backup_path)
+
+    with open(backup_path, "r") as file_in, open(at_path, "w") as file_out:
+        for line in file_in:
+            file_out.write(line.replace("${SED} -i ", "${SED} -i.bak "))
 
 
 def patch_open_pdks(at_path: str):
@@ -67,14 +100,14 @@ def patch_open_pdks(at_path: str):
         )
         exit(-1)
 
-    gf180mcu_sources_ok = is_ancestor(
-        "c1e2118846fd216b2c065a216950e75d2d67ccb8"
-    )  # gf180mcu sources fix
+    gf180mcu_sources_ok = is_ancestor("c1e2118846fd216b2c065a216950e75d2d67ccb8")
     if not gf180mcu_sources_ok:
         print(
-            "Patching gf180mcu Makefile.in…",
+            "Fixing gf180mcu Makefile.in provenance…",
         )
-        open_pdks_fix_makefile(os.path.join(at_path, "gf180mcu", "Makefile.in"))
+        open_pdks_fix_makefile_provenance(
+            os.path.join(at_path, "gf180mcu", "Makefile.in")
+        )
 
     download_script_ok = is_ancestor(
         "ebffedd16788db327af050ac01c3fb1558ebffd1"
@@ -88,11 +121,16 @@ def patch_open_pdks(at_path: str):
         with open(os.path.join(at_path, "scripts", "download.sh"), "wb") as f:
             f.write(r.content)
 
-    sky130_sources_ok = is_ancestor(
-        "274040274a7dfb5fd2c69e0e9c643f80507df3fe"
-    )  # sky130 sources fix
+    sky130_sources_ok = is_ancestor("274040274a7dfb5fd2c69e0e9c643f80507df3fe")
     if not sky130_sources_ok:
         print(
-            "Patching sky130 Makefile.in…",
+            "Fixing sky130 Makefile.in provenance…",
         )
-        open_pdks_fix_makefile(os.path.join(at_path, "sky130", "Makefile.in"))
+        open_pdks_fix_makefile_provenance(
+            os.path.join(at_path, "sky130", "Makefile.in")
+        )
+
+    gnu_sed_used = is_ancestor("636a08dc4a137a40050d086ac00b63d2be323520")
+    if gnu_sed_used:
+        print("Patching GNU sed-only syntax in sky130 Makefile…")
+        open_pdks_patch_gnu_sed(os.path.join(at_path, "sky130", "Makefile.in"))

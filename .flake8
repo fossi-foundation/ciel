@@ -6,6 +6,7 @@ exclude =
     build/,
     pdk/
     venv/,
+    .venv/,
     !ciel/build
 per-file-ignores =
     */__init__.py:F401
