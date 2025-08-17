@@ -31,7 +31,7 @@ opt = partial(click.option, show_default=True)
 
 
 class VersionArgument(click.Argument):
-    def make_metavar(self, ctx: click.Context = None):
+    def make_metavar(self, ctx: Optional[click.Context] = None):
         return "<VERSION>"
 
     def set_tool_metadata_file_path(
