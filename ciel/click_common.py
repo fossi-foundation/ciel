@@ -100,7 +100,8 @@ def opt_pdk_root(function: Callable):
         "--pdk",
         cls=PDKOption,
         required=True,
-        help="A valid PDK family or variant (the latter of which is resolved to a family).",
+        envvar=["PDK_FAMILY", "PDK"],
+        help="A valid PDK family or variant (the latter of which is resolved to a family). If the environment PDK_FAMILY or PDK are set, they are used as secondary sources for this value.",
     )(function)
     function = opt(
         "--pdk-root",

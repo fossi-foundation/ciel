@@ -18,6 +18,7 @@
 import os
 import shutil
 import pathlib
+import warnings
 from datetime import datetime
 from dataclasses import dataclass
 from typing import Optional, List
@@ -82,13 +83,23 @@ def resolve_pdk_family(selector: Optional[str]):
         If selector is None, the PDK_FAMILY and PDK environment variables are
         used as fallbacks. If all are None, the function will simply return None.
 
+        Starting Ciel 3.0.0, supplying None will no longer work and the selector
+        will be a string.
+
         If the selector is invalid, a ValueError will be raised. "ihp_sg13g2"
         will resolve to "ihp-sg13g2" however for some semblance of backwards
         compatibility with previous versions of Ciel/Volare.
     """
-    selector = selector or os.getenv("PDK_FAMILY") or os.getenv("PDK")
     if selector is None:
-        return None  # Let click validator handle it
+        warnings.warn(
+            "Passing None to resolve_pdk_family is deprecated and will be removed in Ciel 3.0.0. Please resolve any environment variables manually.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if environment_specified_pdk := os.getenv("PDK_FAMILY") or os.getenv("PDK"):
+            selector = environment_specified_pdk
+        if selector is None:
+            return None
 
     if selector == "ihp_sg13g2":
         selector = "ihp-sg13g2"
