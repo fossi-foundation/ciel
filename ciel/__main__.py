@@ -340,7 +340,7 @@ def list_pdks_cmd():
             console.print(f"[bold]{family.name}")
             for variant in family.variants:
                 console.print(
-                    f"- {variant}{" (default)" * (variant == family.default_variant)}"
+                    f"- {variant}{' (default)' * (variant == family.default_variant)}"
                 )
     else:
         for family in Family.by_name.values():
