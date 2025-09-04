@@ -228,6 +228,7 @@ def opt_data_source(function: Callable) -> Callable:
     function = click.option(
         "--data-source",
         default="static-web:https://fossi-foundation.github.io/ciel-releases",
+        envvar=["CIEL_DATA_SOURCE"],
         required=False,
         show_default=True,
         help="The data source to use for operations that may require contacting a remote server, in the format '{class_id}:{argument}'",

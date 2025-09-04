@@ -24,7 +24,7 @@ Debian 11+ or Ubuntu 20.04+ is required.
 
 ```sh
 sudo apt-get update
-sudo apt-get install python3 python3-pip xz-utils
+sudo apt-get install python3 python3-pip
 ```
 
 ## RHEL and Derivatives
