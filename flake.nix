@@ -13,7 +13,7 @@
 # limitations under the License.
 {
   inputs = {
-    nix-eda.url = github:fossi-foundation/nix-eda;
+    nix-eda.url = "github:fossi-foundation/nix-eda";
   };
 
   outputs = {
