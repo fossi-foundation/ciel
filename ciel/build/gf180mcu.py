@@ -102,6 +102,11 @@ LIB_FLAG_MAP = {
     "gf180mcu_fd_ip_sram": "--enable-sram-gf180mcu",
     "gf180mcu_osu_sc_gp12t3v3": "--enable-osu-sc-gf180mcu",
     "gf180mcu_osu_sc_gp9t3v3": "--enable-osu-sc-gf180mcu",
+    "gf180mcu_as_sc_mcu7t3v3": "--enable-avalon-sc-gf180mcu",
+    "gf180mcu_ocd_io": "--enable-ocd-io-gf180mcu",
+    "gf180mcu_ocd_alpha_small": "--enable-alpha-gf180mcu",
+    "gf180mcu_ocd_alpha_large": "--enable-alpha-gf180mcu",
+    "gf180mcu_ocd_alpha_misc": "--enable-alpha-gf180mcu",
 }
 
 

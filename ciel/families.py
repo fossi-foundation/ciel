@@ -96,6 +96,11 @@ Family.by_name["gf180mcu"] = Family(
         "gf180mcu_fd_ip_sram",
         "gf180mcu_osu_sc_gp12t3v3",
         "gf180mcu_osu_sc_gp9t3v3",
+        "gf180mcu_as_sc_mcu7t3v3",
+        "gf180mcu_ocd_io",
+        "gf180mcu_ocd_alpha_small",
+        "gf180mcu_ocd_alpha_large",
+        "gf180mcu_ocd_alpha_misc",
     ],
     default_includes=[
         "gf180mcu_fd_io",
