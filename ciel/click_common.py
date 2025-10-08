@@ -44,6 +44,9 @@ class VersionArgument(click.Argument):
 
     def process_value(self, ctx, value):
         try:
+            # handle sentinels in click ≥ 8.3.0
+            if hasattr(value, "name") and value.name == "UNSET":
+                value = None
             tool_metadata_file_path = None
             if "tool_metadata_file_path" in ctx.params:
                 tool_metadata_file_path = ctx.params["tool_metadata_file_path"]
