@@ -46,7 +46,7 @@ class DataSource(object):
 
     def get_downloads_for_version(
         self, version: Version
-    ) -> Tuple[httpx.Client, List[Asset]]:
+    ) -> Tuple[GitHubsession, List[Asset]]:
         raise NotImplementedError()
 
 
@@ -110,7 +110,7 @@ class GitHubReleasesDataSource(DataSource):
 
     def get_downloads_for_version(
         self, version: Version
-    ) -> Tuple[httpx.Client, List[Asset]]:
+    ) -> Tuple[GitHubSession, List[Asset]]:
         release = self.session.api(
             self.repo,
             f"/releases/tags/{version.pdk}-{version.name}",
@@ -169,7 +169,7 @@ class StaticWebDataSource(DataSource):
 
     def get_downloads_for_version(
         self, version: Version
-    ) -> Tuple[httpx.Client, List[Asset]]:
+    ) -> Tuple[GitHubSession, List[Asset]]:
         req = self.session.request(
             "GET", self.base_url + f"/{version.pdk}/{version.name}/manifest.json"
         )
