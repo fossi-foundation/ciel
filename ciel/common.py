@@ -37,8 +37,8 @@ def date_from_iso8601(string: str) -> datetime:
     return datetime.strptime(string, ISO8601_FMT)
 
 
-def mkdirp(path):
-    return pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+def mkdirp(path: str) ->None: 
+pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
 
 # -- API Variables
@@ -51,14 +51,13 @@ CIEL_RESOLVED_HOME = os.getenv("PDK_ROOT") or CIEL_DEFAULT_HOME
 def _get_current_version(pdk_root: str, pdk: str) -> Optional[str]:
     current_file = os.path.join(get_ciel_dir(pdk_root, pdk), "current")
     current_file_dir = os.path.dirname(current_file)
-    mkdirp(current_file_dir)
-    version = None
+    mkdirp(os.path.dirname(current_file))
     try:
-        version = open(current_file).read().strip()
+       with open(current_file, "r", encoding="utf-8") as f:
+           return f.read().strip()
     except FileNotFoundError:
-        pass
 
-    return version
+    return None
 
 
 def get_ciel_home(pdk_root: Optional[str] = None) -> str:
