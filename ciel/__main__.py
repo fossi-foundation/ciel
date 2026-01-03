@@ -167,7 +167,7 @@ def rm_cmd(pdk_root, pdk_family, version):
 @opt_data_source
 @opt_github_token
 @opt_pdk_root
-def list_cmd(data_source, pdk_root, pdk_family):
+def list_cmd(data_source, github_token, pdk_root, pdk_family):
     """Lists PDK versions that are locally installed. JSON if not outputting to a tty."""
 
     pdk_versions = Version.get_all_installed(pdk_root, pdk_family)
@@ -189,7 +189,7 @@ def list_cmd(data_source, pdk_root, pdk_family):
 @opt_github_token
 @opt_data_source
 @opt_pdk_root
-def list_remote_cmd(data_source, pdk_root, pdk_family):
+def list_remote_cmd(data_source, github_token, pdk_root, pdk_family):
     """Lists PDK versions that are remotely available. JSON if not outputting to a tty."""
 
     try:
@@ -257,6 +257,7 @@ def path_cmd(pdk_root, pdk_family, version):
 @arg_version
 def enable_cmd(
     data_source,
+    github_token,
     pdk_root,
     pdk_family,
     version,
@@ -299,6 +300,7 @@ def enable_cmd(
 @arg_version
 def fetch_cmd(
     data_source,
+    github_token,
     pdk_root,
     pdk_family,
     version,
