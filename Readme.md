@@ -44,7 +44,7 @@ ciel --version
 ```
 
 # About the builds
-In its current inception, ciel supports builds of **sky130** and **gf180mcu** PDKs using [Open_PDKs](https://github.com/efabless/open_pdks), including the following libraries:
+In its current inception, ciel supports builds of **sky130** and **gf180mcu** PDKs using [Open-PDKs](https://github.com/rtimothyedwards/open_pdks), including the following libraries:
 
 |sky130|gf180mcu|ihp-sg13g2|
 |-|-|-|
