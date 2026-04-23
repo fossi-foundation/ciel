@@ -62,8 +62,61 @@ In its current inception, ciel supports builds of **sky130** and **gf180mcu** PD
 
 Builds for sky130 and gf180mcu are identified by their [**open_pdks**](https://github.com/rtimothyedwards/open_pdks) commit hashes. Builds for ihp-sg13g2 are identified by their [**IHP-Open-PDK**](https://github.com/ihp-gmbh/ihp-open-pdk) commit hashes.
 
+
+# Migration Guide: From Volare to Ciel
+If you are currently using Volare for open-source Process Design Kit (PDK) management and chip-design workflows, this guide explains how to migrate to Ciel, the modern and actively maintained replacement.
+
+## Why Switch to Ciel?
+* Ciel is actively maintained and supports newer PDKs.
+* Improved version management and the ability to build PDKs locally.
+* A more consistent CLI and workflow.
+* Community support and ongoing updates are centered around Ciel.
+
+## Migration Steps
+1. Install Ciel
+Ensure Python 3.8+ is installed, then install Ciel:
+```sh
+python3 -m pip install --user --upgrade --no-cache-dir ciel
+```
+
+2. Set or Verify Your PDK Root
+Ciel uses:
+* ~/.ciel by default
+* or the directory defined in your PDK_ROOT environment variable
+
+3. List Available PDK Versions
+```sh
+ciel ls-remote --pdk-family sky130
+```
+
+4. List Installed PDKs
+```sh
+ciel ls --pdk-family sky130
+```
+
+5. Enable a PDK Version
+```sh
+ciel enable --pdk-family sky130 <commit-hash>
+```
+
+6. Replace Volare Commands
+Anywhere your scripts or workflows previously used volare, replace them with the equivalent ciel commands.
+
+7. (Optional) Remove Old Volare Files
+```sh
+rm -rf ~/.volare
+```
+
+## Notes
+* Ciel internally draws from concepts and workflow patterns originally introduced in Volare.
+* Volare is no longer required once migration is complete.
+
+## Additional Resources
+* See the main README for installation, usage, and PDK specific details.
+* For help, open an issue on the GitHub repository.
+
 # Usage
-Ciel requires a so-called **PDK Root**. This PDK root can be anywhere on your computer, but by default it's the folder `~/.ciel` in your home directory. If you have the variable `PDK_ROOT` set, ciel will use that instead. You can also manually override both values by supplying the `--pdk-root` commandline argument.
+Ciel requires a so called **PDK Root**. This PDK root can be anywhere on your computer, but by default it's the folder `~/.ciel` in your home directory. If you have the variable `PDK_ROOT` set, ciel will use that instead. You can also manually override both values by supplying the `--pdk-root` commandline argument.
 
 ## Listing All Available PDKs
 To list all available pre-built PDK families hosted in this repository, you can just invoke `ciel ls-remote --pdk-family <pdk-family>`.
