@@ -78,12 +78,12 @@ def get_open_pdks(
             reference_commits = manifest["reference"]
             print(f"Reference commits: {reference_commits}")
         except FileNotFoundError:
-            console.log("Warning: Couldn't find open_pdks/sky130 JSON manifest.")
+            console.log("Warning: Couldn't find open_pdks/gf180mcu JSON manifest.")
         except json.JSONDecodeError:
-            console.log("Warning: Failed to parse open_pdks/sky130 JSON manifest..")
+            console.log("Warning: Failed to parse open_pdks/gf180mcu JSON manifest..")
         except KeyError:
             console.log(
-                "Warning: Failed to extract reference commits from open_pdks/sky130 JSON manifest."
+                "Warning: Failed to extract reference commits from open_pdks/gf180mcu JSON manifest."
             )
 
         return repo_path
@@ -103,6 +103,7 @@ LIB_FLAG_MAP = {
     "gf180mcu_osu_sc_gp12t3v3": "--enable-osu-sc-gf180mcu",
     "gf180mcu_osu_sc_gp9t3v3": "--enable-osu-sc-gf180mcu",
     "gf180mcu_as_sc_mcu7t3v3": "--enable-avalon-sc-gf180mcu",
+    "gf180mcu_re_efuse": "--enable-re-efuse-gf180mcu",
     "gf180mcu_ocd_io": "--enable-ocd-io-gf180mcu",
     "gf180mcu_ocd_ip_sram": "--enable-ocd-sram-gf180mcu",
     "gf180mcu_ocd_alpha_small": "--enable-alpha-gf180mcu",
