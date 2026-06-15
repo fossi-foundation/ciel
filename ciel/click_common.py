@@ -32,7 +32,7 @@ opt = partial(click.option, show_default=True)
 
 class VersionArgument(click.Argument):
     def make_metavar(self, ctx: Optional[click.Context] = None):
-        return "<VERSION>"
+        return "<VERSION (HASH)>"
 
     def set_tool_metadata_file_path(
         self,
@@ -53,7 +53,10 @@ class VersionArgument(click.Argument):
                 del ctx.params["tool_metadata_file_path"]
             resolved = resolve_version(value, tool_metadata_file_path)
         except FileNotFoundError:
-            resolved = None
+            raise click.MissingParameter(
+                ctx=ctx,
+                param=self,
+            )
         return super().process_value(ctx, resolved)
 
 

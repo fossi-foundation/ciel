@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ciel"
-version = "2.5.0"
+version = "2.5.1"
 description = "An PDK builder/version manager for PDKs in the open_pdks format"
 authors = ["Mohamed Gaber <me@donn.website>", "Efabless Corporation"]
 readme = "Readme.md"
@@ -16,7 +16,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.8"
-click = ">=8,<9"
+click = ">=8,<8.5"
 pyyaml = ">=5,<7"
 rich = ">=12,<15"
 httpx = ">=0.22.0,<0.29"
