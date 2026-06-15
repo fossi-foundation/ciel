@@ -65,6 +65,8 @@ jobs:
     name: Check for new version in pyproject.toml
     runs-on: ubuntu-24.04
     if: github.event_name == 'push' && github.ref_name == 'main'
+    outputs:
+      new_tag: ${{ steps.new_tag.outputs.new_tag }}
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v6
@@ -90,7 +92,7 @@ jobs:
     name: Publish
     runs-on: ubuntu-24.04
     needs: [lint, build, test, check_new_version]
-    if: needs.check_new_version.steps.new_tag.outputs.new_tag != 'NO_NEW_TAG'
+    if: needs.check_new_version.outputs.new_tag != 'NO_NEW_TAG'
     environment: pypi
     permissions:
       # IMPORTANT: this permission is mandatory for Trusted Publishing
@@ -103,7 +105,7 @@ jobs:
       - name: Tag Commit
         uses: tvdias/github-tagger@v0.0.1
         with:
-          tag: "${{ needs.check_new_version.steps.new_tag.outputs.new_tag }}"
+          tag: "${{ needs.check_new_version.outputs.new_tag }}"
           repo-token: "${{ secrets.BOT_TOKEN }}"
       - name: Publish
         uses: pypa/gh-action-pypi-publish@release/v1
