@@ -8,33 +8,23 @@ on:
   pull_request:
 
 jobs:
-  lint_python:
+  lint:
     name: Lint Python Code
     runs-on: ubuntu-24.04
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Install Linters
         run: make venv
       - name: Lint
         run: make lint
-  push_to_pypi:
-    name: Build (and publish, if applicable)
+  build:
+    name: Build
     runs-on: ubuntu-24.04
-    needs: lint_python
-    environment: pypi
-    permissions:
-      # IMPORTANT: this permission is mandatory for Trusted Publishing
-      id-token: write
+    needs: lint
     steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Export Repo URL
-        run: echo "REPO_URL=https://github.com/${{ github.repository }}" >> $GITHUB_ENV
-      - name: Export Branch Name
-        run: echo "BRANCH_NAME=${GITHUB_REF##*/}" >> $GITHUB_ENV
+      - name: Check Git repository
+        uses: actions/checkout@v6
       - name: Set Up Python
         uses: actions/setup-python@v4
         with:
@@ -42,19 +32,78 @@ jobs:
       - name: Build Distribution
         run: |
           make dist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: wheel
+          path: ./dist
+  test:
+    name: Test
+    runs-on: ubuntu-24.04
+    needs: build
+    steps:
+      - name: Set Up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.8"
+      - uses: actions/download-artifact@v8
+        with:
+          name: wheel
+          path: ./dist
+      - name: Install Ciel, jq
+        run: |
+          sudo apt-get install -y jq
+          pip3 install ./dist/ciel-*.whl
+      - name: Ensure PDK downloads work
+        shell: bash
+        run: |
+          for pdk in $(python3 -m ciel ls-pdks | jq -r 'keys[]' | tr '\n' ' '); do
+            version="$(python3 -m ciel ls-remote --pdk $pdk | head -n1)"
+            python3 -m ciel fetch --pdk $pdk $version
+            python3 -m ciel prune --pdk $pdk --yes
+          done
+  check_new_version:
+    name: Check for new version in pyproject.toml
+    runs-on: ubuntu-24.04
+    if: github.event == 'push' && github.ref_name == 'main'
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Export Repo URL
+        run: echo "REPO_URL=https://github.com/${{ github.repository }}" >> $GITHUB_ENV
+      - name: Set Up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.8"
       - name: Set default for env.NEW_TAG
         run: echo "NEW_TAG=NO_NEW_TAG" >> $GITHUB_ENV
       - name: Check for new version
-        if: ${{ env.BRANCH_NAME == 'main' }}
         run: |
           make venv
           cd ${GITHUB_WORKSPACE}/ && ./venv/bin/python3 .github/scripts/generate_tag.py
+      - id: new_tag
+        name: Set new tag as job output
+        run: |
+          echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+  publish:
+    name: Publish
+    runs-on: ubuntu-24.04
+    needs: [lint, build, test, check_new_version]
+    if: needs.check_new_version.steps.new_tag.outputs.new_tag != 'NO_NEW_TAG'
+    environment: pypi
+    permissions:
+      # IMPORTANT: this permission is mandatory for Trusted Publishing
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: wheel
+          path: ./dist
       - name: Tag Commit
-        if: ${{ env.NEW_TAG != 'NO_NEW_TAG' }}
         uses: tvdias/github-tagger@v0.0.1
         with:
-          tag: "${{ env.NEW_TAG }}"
+          tag: "${{ needs.check_new_version.steps.new_tag.outputs.new_tag }}"
           repo-token: "${{ secrets.BOT_TOKEN }}"
       - name: Publish
-        if: ${{ env.NEW_TAG != 'NO_NEW_TAG' }}
         uses: pypa/gh-action-pypi-publish@release/v1

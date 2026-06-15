@@ -108,7 +108,6 @@ if os.getenv("GITHUB_ACTIONS") != "true":
     branch = git_command("branch", "--show-current")
 
     os.environ["REPO_URL"] = repo_url
-    os.environ["BRANCH_NAME"] = branch
     os.environ["GITHUB_WORKSPACE"] = git_directory
     os.environ["GITHUB_EVENT_NAME"] = "workspace_dispatch"
     os.environ["GITHUB_RUN_ID"] = "mock_gha_run"
@@ -127,7 +126,6 @@ gh = SimpleNamespace(
     **{
         "run_id": os.getenv("GITHUB_RUN_ID"),
         "origin": origin,
-        "branch": os.getenv("BRANCH_NAME"),
         "root": os.getenv("GITHUB_WORKSPACE"),
         "pdk": os.getenv("PDK_ROOT"),
         "tool": os.getenv("TOOL"),
