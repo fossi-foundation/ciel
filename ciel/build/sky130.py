@@ -55,7 +55,7 @@ def get_open_pdks(
                         gmc,
                         opdks_repo.link,
                         version,
-                        default_branch="master",
+                        default_branch="main",
                     )
                     open_pdks_repo = open_pdks_future.result()
                     repo_path = open_pdks_repo.path
