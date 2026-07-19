@@ -127,7 +127,7 @@ Ciel is based on [Volare](https://github.com/efabless/volare) by Efabless
 Corporation:
 
 ```
-Copyright 2022-2025 Efabless Corporation
+Copyright 2022-2026 Efabless Corporation
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
