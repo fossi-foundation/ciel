@@ -46,6 +46,7 @@ from ..click_common import (
     arg_version,
 )
 from ..families import Family
+from ..exceptions import CielValueError
 
 
 def build(
@@ -65,7 +66,7 @@ def build(
             use_repos[name] = os.path.abspath(path)
 
     if pdk_family not in Family.by_name:
-        raise Exception(f"Unsupported PDK family '{pdk_family}'.")
+        raise CielValueError(f"Unsupported PDK family '{pdk_family}'.")
 
     kwargs = {
         "pdk_root": pdk_root,

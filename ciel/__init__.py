@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from .exceptions import CielRuntimeError, CielValueError
 from .manage import (
     VersionNotFound,
     enable,
@@ -27,3 +28,18 @@ from .github import (
 )
 from .build import build
 from .__version__ import __version__
+
+__all__ = [
+    "CielRuntimeError",
+    "CielValueError",
+    "VersionNotFound",
+    "enable",
+    "get",
+    "fetch",
+    "get_ciel_home",
+    "Version",
+    "Family",
+    "GitHubSession",
+    "build",
+    "__version__",
+]
