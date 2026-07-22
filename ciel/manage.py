@@ -40,9 +40,10 @@ from .common import (
 from .build import build, push
 from .families import Family
 from .source import DataSource
+from .exceptions import CielRuntimeError, CielValueError
 
 
-class VersionNotFound(Exception):
+class VersionNotFound(CielValueError):
     pass
 
 
@@ -140,7 +141,7 @@ def fetch(
 
     pdk_family = Family.by_name.get(pdk)
     if pdk_family is None:
-        raise ValueError(f"Unsupported PDK family '{pdk}'.")
+        raise CielValueError(f"Unsupported PDK family '{pdk}'.")
 
     library_set = pdk_family.resolve_libraries(include_libraries)
 
@@ -154,7 +155,7 @@ def fetch(
 
     for library in library_set:
         if library not in pdk_family.all_libraries:
-            raise RuntimeError(f"Unknown library {library}.")
+            raise CielRuntimeError(f"Unknown library {library}.")
         found = False
         for variant in variants:
             lib_path = os.path.join(version_directory, variant, "libs.ref", library)
@@ -226,7 +227,7 @@ def fetch(
         except httpx.HTTPStatusError as e:
             if e.response is not None and e.response.status_code == 404:
                 if not build_if_not_found:
-                    raise RuntimeError(f"Version {version} not found remotely.")
+                    raise CielRuntimeError(f"Version {version} not found remotely.")
                 console.print(
                     f"Version {version} not found remotely, attempting to build…"
                 )
@@ -249,11 +250,11 @@ def fetch(
                     )
             else:
                 if e.response is not None:
-                    raise RuntimeError(
+                    raise CielRuntimeError(
                         f"Failed to obtain {version} remotely: {e.response}."
                     )
                 else:
-                    raise RuntimeError(f"Failed to request {version} from server: {e}.")
+                    raise CielRuntimeError(f"Failed to request {version} from server: {e}.")
         except KeyboardInterrupt as e:
             console.print("Interrupted.")
             for path in affected_paths:
@@ -305,7 +306,7 @@ def enable(
 
     pdk_family = Family.by_name.get(pdk)
     if pdk_family is None:
-        raise ValueError(f"Unsupported PDK family '{pdk}'.")
+        raise CielValueError(f"Unsupported PDK family '{pdk}'.")
 
     variants = pdk_family.variants
     version_paths = [os.path.join(version_directory, variant) for variant in variants]

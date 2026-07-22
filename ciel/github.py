@@ -26,6 +26,7 @@ from typing import Any, ClassVar, Optional, Callable
 import httpx
 import ssl
 from .__version__ import __version__
+from .exceptions import CielValueError
 
 
 @dataclass
@@ -144,7 +145,7 @@ class GitHubSession(httpx.Client):
         try:
             return req.json()
         except ValueError as e:
-            raise ValueError(f"Request {req.url} returned invalid JSON: {e}") from None
+            raise CielValueError(f"Request {req.url} returned invalid JSON: {e}") from None
 
     @classmethod
     def get_user_agent(Self) -> str:

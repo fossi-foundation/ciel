@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from typing import Iterable, List, Dict, Optional, Set, ClassVar
 
 from .github import RepoInfo, opdks_repo, ihp_repo
+from .exceptions import CielValueError
 
 
 @dataclass
@@ -51,7 +52,7 @@ class Family(object):
             elif element in self.all_libraries:
                 final_set.add(element)
             else:
-                raise ValueError(f"Unknown library {element} for PDK {self.name}")
+                raise CielValueError(f"Unknown library {element} for PDK {self.name}")
         return final_set
 
 

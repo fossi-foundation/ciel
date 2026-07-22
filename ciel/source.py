@@ -25,6 +25,7 @@ import httpx
 
 from .github import GitHubSession, RepoInfo
 from .common import Version, date_from_iso8601
+from .exceptions import CielValueError
 
 
 @dataclass
@@ -103,7 +104,7 @@ class GitHubReleasesDataSource(DataSource):
 
         versions.sort(reverse=True)
         if len(versions) == 0:
-            raise ValueError(
+            raise CielValueError(
                 f"No versions found for '{pdk}' on github.com/{self.repo.id}"
             )
         return versions
@@ -142,7 +143,7 @@ class StaticWebDataSource(DataSource):
             req.raise_for_status()
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
-                raise ValueError(
+                raise CielValueError(
                     f"No versions found for '{pdk}' at '{self.base_url}'"
                 ) from None
             else:
@@ -150,7 +151,7 @@ class StaticWebDataSource(DataSource):
         try:
             manifest = req.json()
         except ValueError as e:
-            raise ValueError(f"Request {req.url} returned invalid JSON: {e}") from None
+            raise CielValueError(f"Request {req.url} returned invalid JSON: {e}") from None
 
         versions = []
         for version in manifest["versions"]:
@@ -164,7 +165,7 @@ class StaticWebDataSource(DataSource):
 
         versions.sort(reverse=True)
         if len(versions) == 0:
-            raise ValueError(f"No versions found for '{pdk}' on '{self.base_url}'")
+            raise CielValueError(f"No versions found for '{pdk}' on '{self.base_url}'")
         return versions
 
     def get_downloads_for_version(
@@ -177,7 +178,7 @@ class StaticWebDataSource(DataSource):
             req.raise_for_status()
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
-                raise ValueError(
+                raise CielValueError(
                     f"Manifest for '{version.pdk}/{version.name}' at '{self.base_url}'"
                 ) from None
             else:
@@ -185,7 +186,7 @@ class StaticWebDataSource(DataSource):
         try:
             manifest = req.json()
         except ValueError as e:
-            raise ValueError(f"Request {req.url} returned invalid JSON: {e}") from None
+            raise CielValueError(f"Request {req.url} returned invalid JSON: {e}") from None
 
         assets = []
         for asset in manifest["assets"]:

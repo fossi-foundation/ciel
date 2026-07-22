@@ -24,6 +24,7 @@ from dataclasses import dataclass
 from typing import Optional, List
 
 from .families import Family
+from .exceptions import CielValueError
 
 # -- Assorted Helper Functions
 ISO8601_FMT = "%Y-%m-%dT%H:%M:%SZ"
@@ -111,7 +112,7 @@ def resolve_pdk_family(selector: Optional[str]):
         if selector in pdk_family.variants:
             return pdk_family.name
 
-    raise ValueError(f"'{selector}' is not a valid PDK family or variant.")
+    raise CielValueError(f"'{selector}' is not a valid PDK family or variant.")
 
 
 def resolve_pdk_variant(selector: Optional[str]):
@@ -137,7 +138,7 @@ def resolve_pdk_variant(selector: Optional[str]):
         if selector in pdk_family.variants:
             return selector
 
-    raise ValueError(f"'{selector}' is not a valid PDK family or variant.")
+    raise CielValueError(f"'{selector}' is not a valid PDK family or variant.")
 
 
 @dataclass
@@ -181,7 +182,7 @@ class Version(object):
 
     def uninstall(self, pdk_root: str):
         if not self.is_installed(pdk_root):
-            raise ValueError(
+            raise CielValueError(
                 f"Version {self.name} of the {self.pdk} PDK is not installed."
             )
 
@@ -253,7 +254,7 @@ def resolve_version(
     open_pdks_list = [tool for tool in tool_metadata if tool["name"] == "open_pdks"]
 
     if len(open_pdks_list) < 1:
-        raise ValueError("No entry for open_pdks found in tool_metadata.yml")
+        raise CielValueError("No entry for open_pdks found in tool_metadata.yml")
 
     version = open_pdks_list[0]["commit"]
 
