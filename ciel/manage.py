@@ -40,10 +40,13 @@ from .common import (
 from .build import build, push
 from .families import Family
 from .source import DataSource
-
-
-class VersionNotFound(Exception):
-    pass
+from .exceptions import (
+    InvalidPDKError,
+    UnknownLibraryError,
+    VersionNotFoundError,
+    DownloadError,
+    UnpackError,
+)
 
 
 def print_installed_list(
@@ -140,7 +143,7 @@ def fetch(
 
     pdk_family = Family.by_name.get(pdk)
     if pdk_family is None:
-        raise ValueError(f"Unsupported PDK family '{pdk}'.")
+        raise InvalidPDKError(f"Unsupported PDK family '{pdk}'.")
 
     library_set = pdk_family.resolve_libraries(include_libraries)
 
@@ -154,7 +157,7 @@ def fetch(
 
     for library in library_set:
         if library not in pdk_family.all_libraries:
-            raise RuntimeError(f"Unknown library {library}.")
+            raise UnknownLibraryError(f"Unknown library {library}.")
         found = False
         for variant in variants:
             lib_path = os.path.join(version_directory, variant, "libs.ref", library)
@@ -218,7 +221,7 @@ def fetch(
                             mkdirp(final_dir)
                             io = tf.extractfile(file)
                             if io is None:
-                                raise IOError(
+                                raise UnpackError(
                                     f"Failed to unpack file in {asset.filename}'s tarball: {file.name}."
                                 )
                             with open(final_path, "wb") as f:
@@ -226,7 +229,7 @@ def fetch(
         except httpx.HTTPStatusError as e:
             if e.response is not None and e.response.status_code == 404:
                 if not build_if_not_found:
-                    raise RuntimeError(f"Version {version} not found remotely.")
+                    raise VersionNotFoundError(f"Version {version} not found remotely.")
                 console.print(
                     f"Version {version} not found remotely, attempting to build…"
                 )
@@ -249,11 +252,11 @@ def fetch(
                     )
             else:
                 if e.response is not None:
-                    raise RuntimeError(
+                    raise DownloadError(
                         f"Failed to obtain {version} remotely: {e.response}."
                     )
                 else:
-                    raise RuntimeError(f"Failed to request {version} from server: {e}.")
+                    raise DownloadError(f"Failed to request {version} from server: {e}.")
         except KeyboardInterrupt as e:
             console.print("Interrupted.")
             for path in affected_paths:
@@ -305,7 +308,7 @@ def enable(
 
     pdk_family = Family.by_name.get(pdk)
     if pdk_family is None:
-        raise ValueError(f"Unsupported PDK family '{pdk}'.")
+        raise InvalidPDKError(f"Unsupported PDK family '{pdk}'.")
 
     variants = pdk_family.variants
     version_paths = [os.path.join(version_directory, variant) for variant in variants]

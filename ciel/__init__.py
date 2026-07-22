@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from .manage import (
-    VersionNotFound,
     enable,
     get,
     fetch,
@@ -27,3 +26,16 @@ from .github import (
 )
 from .build import build
 from .__version__ import __version__
+from .exceptions import (
+    InvalidPDKError,
+    UnknownLibraryError,
+    VersionNotFoundError,
+    VersionNotFound,  # backward-compatible alias
+    VersionNotInstalledError,
+    DownloadError,
+    UnpackError,
+    NoVersionsFoundError,
+    InvalidResponseError,
+    ToolMetadataError,
+    MissingCredentialsError,
+)
