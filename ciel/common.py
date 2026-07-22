@@ -24,6 +24,11 @@ from dataclasses import dataclass
 from typing import Optional, List
 
 from .families import Family
+from .exceptions import (
+    InvalidPDKError,
+    VersionNotInstalledError,
+    ToolMetadataError,
+)
 
 # -- Assorted Helper Functions
 ISO8601_FMT = "%Y-%m-%dT%H:%M:%SZ"
@@ -86,7 +91,7 @@ def resolve_pdk_family(selector: Optional[str]):
         Starting Ciel 3.0.0, supplying None will no longer work and the selector
         will be a string.
 
-        If the selector is invalid, a ValueError will be raised. "ihp_sg13g2"
+        If the selector is invalid, an InvalidPDKError will be raised. "ihp_sg13g2"
         will resolve to "ihp-sg13g2" however for some semblance of backwards
         compatibility with previous versions of Ciel/Volare.
     """
@@ -111,7 +116,7 @@ def resolve_pdk_family(selector: Optional[str]):
         if selector in pdk_family.variants:
             return pdk_family.name
 
-    raise ValueError(f"'{selector}' is not a valid PDK family or variant.")
+    raise InvalidPDKError(f"'{selector}' is not a valid PDK family or variant.")
 
 
 def resolve_pdk_variant(selector: Optional[str]):
@@ -124,7 +129,7 @@ def resolve_pdk_variant(selector: Optional[str]):
         If selector is None, the PDK environment variables is used as a
         fallback. If all are None, the function will simply return None.
 
-        If the selector is invalid, a ValueError will be raised.
+        If the selector is invalid, an InvalidPDKError will be raised.
     """
     selector = selector or os.getenv("PDK")
     if selector is None:
@@ -137,7 +142,7 @@ def resolve_pdk_variant(selector: Optional[str]):
         if selector in pdk_family.variants:
             return selector
 
-    raise ValueError(f"'{selector}' is not a valid PDK family or variant.")
+    raise InvalidPDKError(f"'{selector}' is not a valid PDK family or variant.")
 
 
 @dataclass
@@ -181,7 +186,7 @@ class Version(object):
 
     def uninstall(self, pdk_root: str):
         if not self.is_installed(pdk_root):
-            raise ValueError(
+            raise VersionNotInstalledError(
                 f"Version {self.name} of the {self.pdk} PDK is not installed."
             )
 
@@ -253,7 +258,7 @@ def resolve_version(
     open_pdks_list = [tool for tool in tool_metadata if tool["name"] == "open_pdks"]
 
     if len(open_pdks_list) < 1:
-        raise ValueError("No entry for open_pdks found in tool_metadata.yml")
+        raise ToolMetadataError("No entry for open_pdks found in tool_metadata.yml")
 
     version = open_pdks_list[0]["commit"]
 

@@ -46,6 +46,10 @@ from ..click_common import (
     arg_version,
 )
 from ..families import Family
+from ..exceptions import (
+    InvalidPDKError,
+    MissingCredentialsError,
+)
 
 
 def build(
@@ -65,7 +69,7 @@ def build(
             use_repos[name] = os.path.abspath(path)
 
     if pdk_family not in Family.by_name:
-        raise Exception(f"Unsupported PDK family '{pdk_family}'.")
+        raise InvalidPDKError(f"Unsupported PDK family '{pdk_family}'.")
 
     kwargs = {
         "pdk_root": pdk_root,
@@ -132,7 +136,7 @@ def push(
 
     session = GitHubSession()
     if session.github_token is None:
-        raise TypeError("No GitHub token was provided.")
+        raise MissingCredentialsError("No GitHub token was provided.")
 
     console = Console()
 
