@@ -46,21 +46,22 @@ ciel --version
 # About the builds
 In its current inception, ciel supports builds of **sky130** and **gf180mcu** PDKs using [Open-PDKs](https://github.com/rtimothyedwards/open_pdks), including the following libraries:
 
-|sky130|gf180mcu|ihp-sg13g2|
-|-|-|-|
-|sky130_fd_io|gf180mcu_fd_io|sg13g2_io|
-|sky130_fd_pr|gf180mcu_fd_pr|sg13g2_pr|
-|sky130_fd_pr_reram|gf180mcu_fd_pr|sg13g2_pr|
-|sky130_fd_sc_hd|gf180mcu_fd_sc_mcu7t5v0|sg13g2_stdcell|
-|sky130_ml_xx_hd|gf180mcu_fd_sc_mcu9t5v0|-|
-|sky130_fd_sc_hvl|gf180mcu_osu_sc_gp9t3v3|-|
-|sky130_fd_sc_lp|gf180mcu_osu_sc_gp12t3v3|-|
-|sky130_fd_sc_ls|-|-|
-|sky130_fd_sc_ms|-|-|
-|sky130_fd_sc_hs|-|-|
-|sky130_sram_macros|gf180mcu_fd_ip_sram|sg13g2_sram|
+|sky130|gf180mcu|ihp-sg13g2|ics55|
+|-|-|-|-|
+|sky130_fd_io|gf180mcu_fd_io|sg13g2_io|ICSIOA_N55_3P3_1P6M1TM|
+|sky130_fd_pr|gf180mcu_fd_pr|sg13g2_pr|-|
+|sky130_fd_pr_reram|gf180mcu_fd_pr|sg13g2_pr|-|
+|sky130_fd_sc_hd|gf180mcu_fd_sc_mcu7t5v0|sg13g2_stdcell|ics55_LLSC_H7CR|
+|sky130_ml_xx_hd|gf180mcu_fd_sc_mcu9t5v0|-|-|
+|sky130_fd_sc_hvl|gf180mcu_osu_sc_gp9t3v3|-|ics55_LLSC_H7CH|
+|sky130_fd_sc_lp|gf180mcu_osu_sc_gp12t3v3|-|ics55_LLSC_H7CL|
+|sky130_fd_sc_ls|-|-|-|
+|sky130_fd_sc_ms|-|-|-|
+|sky130_fd_sc_hs|-|-|-|
+|sky130_sram_macros|gf180mcu_fd_ip_sram|sg13g2_sram|-|
 
 Builds for sky130 and gf180mcu are identified by their [**open_pdks**](https://github.com/rtimothyedwards/open_pdks) commit hashes. Builds for ihp-sg13g2 are identified by their [**IHP-Open-PDK**](https://github.com/ihp-gmbh/ihp-open-pdk) commit hashes.
+Builds for ics55 are identified by their [**icesprout55-openpdk**](https://github.com/ckdur/icesprout55-openpdk) commit hashes.
 
 # Usage
 Ciel requires a so-called **PDK Root**. This PDK root can be anywhere on your computer, but by default it's the folder `~/.ciel` in your home directory. If you have the variable `PDK_ROOT` set, ciel will use that instead. You can also manually override both values by supplying the `--pdk-root` commandline argument.
