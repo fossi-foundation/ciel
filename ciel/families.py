@@ -14,7 +14,7 @@
 from dataclasses import dataclass
 from typing import Iterable, List, Dict, Optional, Set, ClassVar
 
-from .github import RepoInfo, opdks_repo, ihp_repo
+from .github import RepoInfo, opdks_repo, ihp_repo, ics55_open_repo
 
 
 @dataclass
@@ -123,4 +123,15 @@ Family.by_name["ihp-sg13g2"] = Family(
         "sg13g2_stdcell",
     ],
     repo=ihp_repo,
+)
+Family.by_name["ics55"] = Family(
+    name="ics55",
+    variants=["ics55"],
+    all_libraries=[
+        "ics55_LLSC_H7CH",
+        "ics55_LLSC_H7CL",
+        "ics55_LLSC_H7CR",
+        "ICsprout_55LLULP1233_IO_251013",
+    ],
+    repo=ics55_open_repo,
 )

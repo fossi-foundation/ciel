@@ -60,6 +60,16 @@ ihp_repo = RepoInfo(
     os.getenv("IHP_REPO_NAME", "IHP-Open-PDK"),
 )
 
+ics55_repo = RepoInfo(
+    os.getenv("ICS_REPO_OWNER", "openecos-projects"),
+    os.getenv("ICS_REPO_NAME", "icsprout55-pdk"),
+)
+
+ics55_open_repo = RepoInfo(
+    os.getenv("ICS_REPO_OWNER", "ckdur"),  # TODO: Once the PR passes, we should change this
+    os.getenv("ICS_REPO_NAME", "icsprout55-pdk"),
+)
+
 
 class GitHubSession(httpx.Client):
     class Token(object):
