@@ -79,7 +79,7 @@ def build_ics(build_directory, ics55_path, log_dir):
         output_file = open(log_to, "w")
         try:
             subprocess.check_call(
-                ["bash", script],
+                ["bash", "-c", script],
                 cwd=ics55_path,
                 stdout=output_file,
                 stderr=output_file,
@@ -93,10 +93,10 @@ def build_ics(build_directory, ics55_path, log_dir):
 
     config_log = os.path.join(log_dir, "config.log")
     console.log(f"Downloading and installing PDK. Logging into {config_log}")
-    run_sh("install.sh", log_to=config_log)
+    run_sh("make openpdk", log_to=config_log)
 
     shutil.copytree(
-        os.path.join(ics55_path, "icsprout55"),
+        os.path.join(ics55_path, "ics55"),
         os.path.join(build_directory, "ics55"),
         ignore=lambda dir, files: (
             files if ".git" in os.path.split(dir) else [".git", ".DS_Store"]

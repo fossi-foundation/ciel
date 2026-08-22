@@ -66,8 +66,8 @@ ics55_repo = RepoInfo(
 )
 
 ics55_open_repo = RepoInfo(
-    os.getenv("ICS_REPO_OWNER", "ckdur"),
-    os.getenv("ICS_REPO_NAME", "icsprout55-openpdk"),
+    os.getenv("ICS_REPO_OWNER", "ckdur"),  # TODO: Once the PR passes, we should change this
+    os.getenv("ICS_REPO_NAME", "icsprout55-pdk"),
 )
 
 
