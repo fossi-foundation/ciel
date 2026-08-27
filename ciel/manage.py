@@ -21,8 +21,8 @@ import shutil
 import hashlib
 import tarfile
 import tempfile
-import warnings
-from typing import Dict, Iterable, List, Optional, Union
+from pathlib import Path
+from typing import Dict, Iterable, List, Optional, Union, Tuple
 
 import rich
 import httpx
@@ -37,7 +37,7 @@ from .common import (
     get_versions_dir,
     get_ciel_dir,
 )
-from .build import build, push
+from .build import build
 from .families import Family
 from .source import DataSource
 
@@ -119,30 +119,30 @@ def print_remote_list(
 
 def fetch(
     pdk_root: str,
-    pdk: str,
+    pdk_tuple: Tuple[str, str],
     version: str,
     *,
     data_source: DataSource,
     build_if_not_found=False,
-    also_push=False,
     build_kwargs: dict = {},
-    push_kwargs: dict = {},
     include_libraries: Optional[Iterable[str]] = None,
     output: Union[Console, io.TextIOWrapper] = Console(),
 ) -> Version:
+    pdk_family_name, pdk_variant_name = pdk_tuple
+
     console = output
     if not isinstance(console, Console):
         console = Console(file=console)
 
-    version_object = Version(version, pdk)
+    version_object = Version(version, pdk_family_name)
 
     version_directory = version_object.get_dir(pdk_root)
 
-    pdk_family = Family.by_name.get(pdk)
+    pdk_family = Family.by_name.get(pdk_family_name)
     if pdk_family is None:
-        raise ValueError(f"Unsupported PDK family '{pdk}'.")
+        raise ValueError(f"Unsupported PDK family '{pdk_family_name}'.")
 
-    library_set = pdk_family.resolve_libraries(include_libraries)
+    library_set = pdk_family.resolve_libraries(include_libraries, pdk_variant_name)
 
     variants = pdk_family.variants
 
@@ -163,7 +163,7 @@ def fetch(
         if not found:
             missing_libraries.add(library)
 
-    affected_paths = []
+    affected_paths: List[Path] = []
     if len(missing_libraries) != 0 or common_missing:
         if common_missing:
             console.print(
@@ -174,10 +174,10 @@ def fetch(
             console.print(f"Libraries {missing_libraries} not found, downloading them…")
             for variant in variants:
                 affected_paths.append(
-                    os.path.join(version_directory, variant, "libs.ref", library)
+                    version_directory / variant / "libs.ref" / library
                 )
 
-        tarball_paths = []
+        tarball_paths: List[Path] = []
         try:
             client, assets = data_source.get_downloads_for_version(version_object)
             assets_filtered = []
@@ -186,9 +186,10 @@ def fetch(
                     assets_filtered.append(asset)
                 elif asset.content in missing_libraries:
                     assets_filtered.append(asset)
-            tarball_directory = tempfile.TemporaryDirectory(suffix=".ciel")
+            tarball_directory_obj = tempfile.TemporaryDirectory(suffix=".ciel")
+            tarball_directory = Path(tarball_directory_obj.name)
             for asset in assets_filtered:
-                tarball_path = os.path.join(tarball_directory.name, asset.filename)
+                tarball_path = tarball_directory / asset.filename
                 tarball_paths.append(tarball_path)
                 with client.stream("get", asset.url) as r, rich.progress.Progress(
                     console=console
@@ -213,9 +214,8 @@ def fetch(
                         for file in tf:
                             if file.isdir():
                                 continue
-                            final_path = os.path.join(version_directory, file.name)
-                            final_dir = os.path.dirname(final_path)
-                            mkdirp(final_dir)
+                            final_path = version_directory / file.name
+                            final_path.parent.mkdir(parents=True, exist_ok=True)
                             io = tf.extractfile(file)
                             if io is None:
                                 raise IOError(
@@ -232,21 +232,10 @@ def fetch(
                 )
                 build(
                     pdk_root=pdk_root,
-                    pdk_family=pdk,
+                    pdk_tuple=pdk_tuple,
                     version=version,
                     **build_kwargs,
                 )
-                if also_push:
-                    if push_kwargs["push_libraries"] is None:
-                        push_kwargs["push_libraries"] = Family.by_name[
-                            pdk
-                        ].default_includes.copy()
-                    push(
-                        pdk_root=pdk_root,
-                        pdk_family=pdk,
-                        version=version,
-                        **push_kwargs,
-                    )
             else:
                 if e.response is not None:
                     raise RuntimeError(
@@ -279,33 +268,32 @@ def fetch(
                 with open(variant_sources_file, "w") as f:
                     print(f"{pdk_family.repo.name} {version}", file=f)
 
-    return Version(version, pdk)
+    return Version(version, pdk_family_name)
 
 
 def enable(
     pdk_root: str,
-    pdk: str,
+    pdk_tuple: Tuple[str, str],
     version: str,
     *,
     data_source: DataSource,
     build_if_not_found: bool = False,
-    also_push: bool = False,
     build_kwargs: dict = {},
-    push_kwargs: dict = {},
     include_libraries: Optional[List[str]] = None,
     output: Union[Console, io.TextIOWrapper] = Console(),
 ) -> Version:
+    pdk_family_name, _ = pdk_tuple
 
     console = output
     if not isinstance(console, Console):
         console = Console(file=console)
 
-    version_object = Version(version, pdk)
+    version_object = Version(version, pdk_family_name)
     version_directory = version_object.get_dir(pdk_root)
 
-    pdk_family = Family.by_name.get(pdk)
+    pdk_family = Family.by_name.get(pdk_family_name)
     if pdk_family is None:
-        raise ValueError(f"Unsupported PDK family '{pdk}'.")
+        raise ValueError(f"Unsupported PDK family '{pdk_family_name}'.")
 
     variants = pdk_family.variants
     version_paths = [os.path.join(version_directory, variant) for variant in variants]
@@ -313,18 +301,16 @@ def enable(
 
     fetch(
         pdk_root,
-        pdk,
+        pdk_tuple,
         version,
         data_source=data_source,
         build_if_not_found=build_if_not_found,
-        also_push=also_push,
         build_kwargs=build_kwargs,
-        push_kwargs=push_kwargs,
         include_libraries=include_libraries,
         output=output,
     )
 
-    current_file = os.path.join(get_ciel_dir(pdk_root, pdk), "current")
+    current_file = os.path.join(get_ciel_dir(pdk_root, pdk_family_name), "current")
     current_file_dir = os.path.dirname(current_file)
     mkdirp(current_file_dir)
 
@@ -346,13 +332,8 @@ def enable(
         with open(current_file, "w") as f:
             f.write(version)
 
-    console.print(f"Version {version} enabled for the {pdk} PDK.")
+    console.print(f"Version {version} enabled for the {pdk_family_name} PDK.")
     return version_object
-
-
-def get(*args, **kwargs):
-    warnings.warn("get() has been deprecated: use fetch()")
-    return fetch(*args, **kwargs)
 
 
 def optimize(pdk_root, version_object: Version):

@@ -71,11 +71,12 @@ def get_ihp(
 
 def build_ihp(build_directory, ihp_path):
     # """Build"""
+    ihp_sg13_family = Family.by_name["ihp-sg13"]
     try:
-        shutil.rmtree(os.path.join(build_directory, "ihp-sg13"))
+        for variant in ihp_sg13_family.variants:
+            shutil.rmtree(os.path.join(build_directory, variant))
     except FileNotFoundError:
         pass
-    ihp_sg13_family = Family.by_name["ihp-sg13"]
     for variant in ihp_sg13_family.variants:
         shutil.copytree(
             os.path.join(ihp_path, variant),
@@ -120,6 +121,7 @@ def install_ihp(build_directory, pdk_root, version):
 
 def build(
     pdk_root: str,
+    pdk_variant: str,
     version: str,
     jobs: int = 1,
     clear_build_artifacts: bool = True,

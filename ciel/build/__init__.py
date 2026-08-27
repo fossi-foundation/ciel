@@ -22,7 +22,7 @@ import tarfile
 import tempfile
 import importlib
 import subprocess
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Tuple
 
 import click
 import zstandard as zstd
@@ -42,7 +42,7 @@ from ..common import (
 from ..click_common import (
     opt_push,
     opt_build,
-    opt_pdk_root,
+    opt_pdk,
     arg_version,
 )
 from ..families import Family
@@ -50,7 +50,7 @@ from ..families import Family
 
 def build(
     pdk_root: str,
-    pdk_family: str,
+    pdk_tuple: Tuple[str, str],
     version: str,
     jobs: int = 1,
     sram: bool = True,  # Deprecated
@@ -58,6 +58,8 @@ def build(
     include_libraries: Optional[List[str]] = None,
     use_repo_at: Optional[List[str]] = None,
 ):
+    pdk_family, pdk_variant = pdk_tuple
+
     use_repos = {}
     if use_repo_at is not None:
         for repo in use_repo_at:
@@ -69,6 +71,7 @@ def build(
 
     kwargs = {
         "pdk_root": pdk_root,
+        "pdk_variant": pdk_variant,
         "version": version,
         "jobs": jobs,
         "clear_build_artifacts": clear_build_artifacts,
@@ -83,14 +86,14 @@ def build(
 
 @click.command("build")
 @opt_github_token
-@opt_pdk_root
+@opt_pdk
 @opt_build
 @arg_version
 def build_cmd(
     include_libraries,
     jobs,
     pdk_root,
-    pdk_family,
+    pdk_tuple,
     clear_build_artifacts,
     version,
     use_repo_at,
@@ -109,7 +112,7 @@ def build_cmd(
 
     build(
         pdk_root=pdk_root,
-        pdk_family=pdk_family,
+        pdk_tuple=pdk_tuple,
         version=version,
         jobs=jobs,
         clear_build_artifacts=clear_build_artifacts,
@@ -120,7 +123,7 @@ def build_cmd(
 
 def push(
     pdk_root,
-    pdk_family,
+    pdk_tuple,
     version,
     *,
     owner,
@@ -128,7 +131,11 @@ def push(
     pre=False,
     push_libraries=None,
 ):
-    family = Family.by_name[pdk_family]
+    # variant doesn't matter, we're pushing whatever we can unless an explicit
+    # list is provided
+    pdk_family_name, _ = pdk_tuple
+
+    pdk_family = Family.by_name[pdk_family_name]
 
     session = GitHubSession()
     if session.github_token is None:
@@ -137,10 +144,10 @@ def push(
     console = Console()
 
     if push_libraries is None or len(push_libraries) == 0:
-        push_libraries = family.all_libraries
+        push_libraries = pdk_family.all_libraries
     library_list = set(push_libraries)
 
-    version_object = Version(version, pdk_family)
+    version_object = Version(version, pdk_family_name)
     version_directory = version_object.get_dir(pdk_root)
     if not os.path.isdir(version_directory):
         raise FileNotFoundError(f"Version {version} not found.")
@@ -181,15 +188,15 @@ def push(
             progress.remove_task(task)
             final_tarballs.append(tarball_path)
 
-    tag = f"{pdk_family}-{version}"
+    tag = f"{pdk_family_name}-{version}"
 
     # If someone wants to rewrite this to not use ghr, please, by all means.
     console.log("Starting upload…")
 
-    body = f"{pdk_family} variants built using ciel"
-    date = get_commit_date(version, family.repo, session)
+    body = f"{pdk_family_name} variants built using ciel"
+    date = get_commit_date(version, pdk_family.repo, session)
     if date is not None:
-        body = f"{pdk_family} variants (released on {date_to_iso8601(date)})"
+        body = f"{pdk_family_name} variants (released on {date_to_iso8601(date)})"
 
     for tarball_path in final_tarballs:
         subprocess.check_call(
@@ -218,7 +225,7 @@ def push(
 
 @click.command("push", hidden=True)
 @opt_github_token
-@opt_pdk_root
+@opt_pdk
 @opt_push
 @click.argument("version")
 def push_cmd(
@@ -226,7 +233,7 @@ def push_cmd(
     repository,
     pre,
     pdk_root,
-    pdk_family,
+    pdk_tuple,
     version,
     push_libraries,
 ):
@@ -241,7 +248,7 @@ def push_cmd(
     try:
         push(
             pdk_root,
-            pdk_family,
+            pdk_tuple,
             version,
             owner=owner,
             repository=repository,
