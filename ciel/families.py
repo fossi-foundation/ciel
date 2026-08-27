@@ -134,12 +134,15 @@ Family(
 
 Family(
     name="ihp-sg13",
-    variants=["ihp-sg13g2"],
+    variants=["ihp-sg13g2", "ihp-sg13cmos5l"],
     all_libraries=[
         "sg13g2_io",
         "sg13g2_pr",
         "sg13g2_sram",
         "sg13g2_stdcell",
+        "sg13cmos5l_io",
+        "sg13cmos5l_sram",
+        "sg13cmos5l_stdcell",
     ],
     default_includes={
         "ihp-sg13g2": [
@@ -147,6 +150,11 @@ Family(
             "sg13g2_pr",
             "sg13g2_sram",
             "sg13g2_stdcell",
+        ],
+        "ihp-sg13cmos5l": [
+            "sg13cmos5l_io",
+            "sg13cmos5l_sram",
+            "sg13cmos5l_stdcell",
         ],
     },
     repo=ihp_repo,

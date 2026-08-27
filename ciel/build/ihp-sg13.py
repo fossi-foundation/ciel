@@ -18,6 +18,7 @@
 import os
 import shutil
 import subprocess
+from pathlib import Path
 from datetime import datetime
 from typing import Optional, List, Tuple, Dict
 from concurrent.futures import ThreadPoolExecutor
@@ -71,6 +72,17 @@ def get_ihp(
 
 def build_ihp(build_directory, ihp_path):
     # """Build"""
+    def filter(dir_s, files):
+        dir = Path(dir_s)
+        if dir.name == ".git":
+            return files
+        rejects = [".git", ".DS_Store"]
+        for file in files:
+            # ignore bad symlinks
+            if not (Path(dir) / file).resolve().exists():
+                rejects.append(file)
+        return rejects
+
     ihp_sg13_family = Family.by_name["ihp-sg13"]
     try:
         for variant in ihp_sg13_family.variants:
@@ -81,9 +93,7 @@ def build_ihp(build_directory, ihp_path):
         shutil.copytree(
             os.path.join(ihp_path, variant),
             os.path.join(build_directory, variant),
-            ignore=lambda dir, files: (
-                files if ".git" in os.path.split(dir) else [".git", ".DS_Store"]
-            ),
+            ignore=filter,
         )
 
 
