@@ -4,8 +4,22 @@ name: CI
 on:
   push:
     branches:
-      - "*"
+      - "main"
   pull_request:
+
+concurrency:
+  # Behavior:
+  # - Group all pull requests: latest push cancels previous ones
+  # - Group all branches:
+  #   - If main/version- branches: run serially
+  #   - Else, latest push cancels previous ones
+  group: >
+    ${{
+      (github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number)) ||
+      (github.event_name == 'push' && format('branch-{0}', github.ref_name)) ||
+      ''
+    }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   lint:
@@ -13,7 +27,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install Linters
         run: make venv
       - name: Lint
@@ -24,7 +38,7 @@ jobs:
     needs: lint
     steps:
       - name: Check Git repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Set Up Python
         uses: actions/setup-python@v4
         with:
@@ -66,46 +80,51 @@ jobs:
     runs-on: ubuntu-24.04
     if: github.event_name == 'push' && github.ref_name == 'main'
     outputs:
-      new_tag: ${{ steps.new_tag.outputs.new_tag }}
+      version: ${{ steps.get_version.outputs.version }}
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - name: Export Repo URL
-        run: echo "REPO_URL=https://github.com/${{ github.repository }}" >> $GITHUB_ENV
-      - name: Set Up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.8"
-      - name: Set default for env.NEW_TAG
-        run: echo "NEW_TAG=NO_NEW_TAG" >> $GITHUB_ENV
-      - name: Check for new version
+      - id: get_version
+        name: Extract new version
         run: |
-          make venv
-          cd ${GITHUB_WORKSPACE}/ && ./venv/bin/python3 .github/scripts/generate_tag.py
-      - id: new_tag
-        name: Set new tag as job output
-        run: |
-          echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+          VERSION="$(perl -ne 'print $1 if /^version\s*=\s*\"(.+?)\"/' pyproject.toml)"
+          if ! gh release view $VERSION 2>&1 > /dev/null; then
+            echo "Uploading new version $VERSION if CI passes."
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          fi
   publish:
     name: Publish
     runs-on: ubuntu-24.04
     needs: [lint, build, test, check_new_version]
-    if: needs.check_new_version.outputs.new_tag != 'NO_NEW_TAG'
+    if: needs.check_new_version.outputs.version != ''
     environment: pypi
     permissions:
       # IMPORTANT: this permission is mandatory for Trusted Publishing
       id-token: write
+      contents: write
     steps:
       - uses: actions/download-artifact@v8
         with:
           name: wheel
           path: ./dist
-      - name: Tag Commit
-        uses: tvdias/github-tagger@v0.0.1
-        with:
-          tag: "${{ needs.check_new_version.outputs.new_tag }}"
-          repo-token: "${{ secrets.BOT_TOKEN }}"
+      # 2nd to last because it is immutable but likely to fail, so if it fails
+      # I don't want PyPI publishing
+      - name: Create release
+        run: |
+          prerelease_arg=()
+          version="${{ needs.check_new_version.outputs.version }}"
+          if [[ "$version" = *b* ]] || [[ "$version" = *a* ]] || [[ "$version" = *.dev* ]] || [[ "$version" = *rc* ]]; then
+            prerelease_arg+=( "--prerelease" )
+          fi
+
+          gh release create $version \
+            --generate-notes \
+            --target "${{ github.ref_name }}" \
+            "${prerelease_arg[@]}" \
+            ./dist/*
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: Publish
         uses: pypa/gh-action-pypi-publish@release/v1

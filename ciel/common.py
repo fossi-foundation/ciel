@@ -1,4 +1,4 @@
-# Copyright 2025 The American University in Cairo
+# Copyright 2025 Ciel Contributors
 #
 # Modified from the Volare project
 #
@@ -102,7 +102,7 @@ def resolve_pdk_family(selector: Optional[str]):
             return None
 
     if selector == "ihp_sg13g2":
-        selector = "ihp-sg13g2"
+        selector = "ihp-sg13"
 
     if selector in Family.by_name:
         return selector

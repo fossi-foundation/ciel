@@ -113,8 +113,8 @@ Family.by_name["gf180mcu"] = Family(
     ],
     repo=opdks_repo,
 )
-Family.by_name["ihp-sg13g2"] = Family(
-    name="ihp-sg13g2",
+Family.by_name["ihp-sg13"] = Family(
+    name="ihp-sg13",
     variants=["ihp-sg13g2"],
     all_libraries=[
         "sg13g2_io",
