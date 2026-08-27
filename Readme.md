@@ -46,11 +46,11 @@ ciel --version
 # About the builds
 In its current inception, ciel supports builds of **sky130** and **gf180mcu** PDKs using [Open-PDKs](https://github.com/rtimothyedwards/open_pdks), including the following libraries:
 
-|sky130|gf180mcu|ihp-sg13g2|
+|sky130|gf180mcu|ihp-sg13|
 |-|-|-|
 |sky130_fd_io|gf180mcu_fd_io|sg13g2_io|
 |sky130_fd_pr|gf180mcu_fd_pr|sg13g2_pr|
-|sky130_fd_pr_reram|gf180mcu_fd_pr|sg13g2_pr|
+|sky130_fd_pr_reram|-|-|
 |sky130_fd_sc_hd|gf180mcu_fd_sc_mcu7t5v0|sg13g2_stdcell|
 |sky130_ml_xx_hd|gf180mcu_fd_sc_mcu9t5v0|-|
 |sky130_fd_sc_hvl|gf180mcu_osu_sc_gp9t3v3|-|

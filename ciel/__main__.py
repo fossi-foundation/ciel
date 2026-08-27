@@ -1,4 +1,4 @@
-# Copyright 2025 The American University in Cairo
+# Copyright 2025 Ciel Contributors
 #
 # Adapted from the Volare project
 #
@@ -29,7 +29,7 @@ from .common import (
     get_ciel_home,
 )
 from .click_common import (
-    opt_pdk_root,
+    opt_pdk,
     arg_version,
 )
 from .manage import (
@@ -49,35 +49,27 @@ from .families import Family
 
 
 @click.command("output")
-@opt_pdk_root
-def output_cmd(pdk_root, pdk_family):
-    """Outputs the currently enabled PDK version.
+@opt_pdk
+def output_cmd(pdk_root, pdk_tuple):
+    """Outputs the currently enabled PDK version."""
 
-    If not outputting to a tty, the output is either the version string
-    unembellished, or, if no current version is enabled, an empty output with an
-    exit code of 1.
-    """
-
+    pdk_family, _ = pdk_tuple
     version = Version.get_current(pdk_root, pdk_family)
-    if sys.stdout.isatty():
-        if version is None:
-            print(
-                f"No version of the PDK {pdk_family} is currently enabled at {pdk_root}."
-            )
-            print("Invoke ciel --help for assistance installing and enabling versions.")
-            exit(1)
-        else:
-            print(f"Installed: {pdk_family} v{version.name}")
-            print("Invoke ciel --help for assistance installing and enabling versions.")
-    else:
-        if version is None:
-            exit(1)
-        else:
-            print(version.name, end="")
+    if version is None:
+        print(
+            f"No version of the PDK {pdk_family} is currently enabled at {pdk_root}.",
+            file=sys.stderr,
+        )
+        print(
+            "Invoke ciel --help for assistance installing and enabling versions.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    print(version.name, end="")
 
 
 @click.command("prune")
-@opt_pdk_root
+@opt_pdk
 @click.option(
     "--yes",
     is_flag=True,
@@ -85,9 +77,10 @@ def output_cmd(pdk_root, pdk_family):
     expose_value=False,
     prompt="Are you sure? This will delete all non-enabled versions of the PDK from your computer.",
 )
-def prune_cmd(pdk_root, pdk_family):
+def prune_cmd(pdk_root, pdk_tuple):
     """Removes all PDKs other than, if it exists, the one currently set as 'enabled' in the PDK root."""
 
+    pdk_family, _ = pdk_tuple
     pdk_versions = Version.get_all_installed(pdk_root, pdk_family)
     for version in pdk_versions:
         if version.is_current(pdk_root):
@@ -100,7 +93,7 @@ def prune_cmd(pdk_root, pdk_family):
 
 
 @click.command("optimize")
-@opt_pdk_root
+@opt_pdk
 @arg_version
 def optimize_cmd(pdk_root, pdk_family, version):
     """
@@ -120,8 +113,8 @@ def optimize_cmd(pdk_root, pdk_family, version):
 
 
 @click.command("optimize-all")
-@opt_pdk_root
-def optimize_all_cmd(pdk_root, pdk_family):
+@opt_pdk
+def optimize_all_cmd(pdk_root, pdk_tuple):
     """
     [Experimental] This command attempts to save space by converting identical
     files across variants for all versions of a specific PDK family to symbolic
@@ -134,6 +127,7 @@ def optimize_all_cmd(pdk_root, pdk_family):
     """
 
     recovered = 0
+    pdk_family, _ = pdk_tuple
     for version in Version.get_all_installed(pdk_root, pdk_family):
         recovered += optimize(pdk_root, version)
 
@@ -142,7 +136,7 @@ def optimize_all_cmd(pdk_root, pdk_family):
 
 
 @click.command("rm")
-@opt_pdk_root
+@opt_pdk
 @click.option(
     "--yes",
     is_flag=True,
@@ -151,9 +145,10 @@ def optimize_all_cmd(pdk_root, pdk_family):
     prompt="Are you sure? This will delete this version of the PDK from your computer.",
 )
 @arg_version
-def rm_cmd(pdk_root, pdk_family, version):
+def rm_cmd(pdk_root, pdk_tuple, version):
     """Removes the PDK version specified."""
 
+    pdk_family, _ = pdk_tuple
     version_object = Version(version, pdk_family)
     try:
         version_object.uninstall(pdk_root)
@@ -166,10 +161,16 @@ def rm_cmd(pdk_root, pdk_family, version):
 @click.command("ls")
 @opt_data_source
 @opt_github_token
-@opt_pdk_root
-def list_cmd(data_source, pdk_root, pdk_family):
-    """Lists PDK versions that are locally installed. JSON if not outputting to a tty."""
+@opt_pdk
+def list_cmd(data_source, pdk_root, pdk_tuple):
+    """
+    Lists PDK versions that are locally installed.
 
+    If not outputting to a tty, each version will be output on its own line
+    in plain text.
+    """
+
+    pdk_family, _ = pdk_tuple
     pdk_versions = Version.get_all_installed(pdk_root, pdk_family)
 
     if sys.stdout.isatty():
@@ -182,16 +183,23 @@ def list_cmd(data_source, pdk_root, pdk_family):
             installed_list=pdk_versions,
         )
     else:
-        print(json.dumps([version.name for version in pdk_versions]), end="")
+        for version in pdk_versions:
+            print(version.name)
 
 
 @click.command("ls-remote")
 @opt_github_token
 @opt_data_source
-@opt_pdk_root
-def list_remote_cmd(data_source, pdk_root, pdk_family):
-    """Lists PDK versions that are remotely available. JSON if not outputting to a tty."""
+@opt_pdk
+def list_remote_cmd(data_source, pdk_root, pdk_tuple):
+    """
+    Lists PDK versions that are remotely available.
 
+    If not outputting to a tty, each version will be output on its own line
+    in plain text.
+    """
+
+    pdk_family, _ = pdk_tuple
     try:
         pdk_versions = data_source.get_available_versions(pdk_family)
 
@@ -202,40 +210,32 @@ def list_remote_cmd(data_source, pdk_root, pdk_family):
             for version in pdk_versions:
                 print(version.name)
     except ValueError as e:
-        if sys.stdout.isatty():
-            console = Console()
-            console.print(f"[red]{e}")
-        else:
-            print(f"{e}", file=sys.stderr)
+        console = Console(stderr=True)
+        console.print(f"[red]{e}")
         sys.exit(-1)
     except httpx.HTTPStatusError as e:
-        if sys.stdout.isatty():
-            console = Console()
-            console.print(f"[red]Encountered an error when polling version list: {e}")
-        else:
-            print(f"Failed to get version list: {e}", file=sys.stderr)
+        console = Console(stderr=True)
+        console.print(f"[red]Encountered an error when polling version list: {e}")
         sys.exit(-1)
     except httpx.NetworkError as e:
-        if sys.stdout.isatty():
-            console = Console()
-            console.print(
-                "[red]You don't appear to be connected to the Internet. ls-remote cannot be used."
-            )
-        else:
-            print(f"Failed to connect to remote server: {e}", file=sys.stderr)
+        console = Console(stderr=True)
+        console.print(
+            f"[red]You don't appear to be connected to the Internet. ls-remote cannot be used.: {e}"
+        )
         sys.exit(-1)
 
 
 @click.command("path")
-@opt_pdk_root
+@opt_pdk
 @arg_version
-def path_cmd(pdk_root, pdk_family, version):
+def path_cmd(pdk_root, pdk_tuple, version):
     """
     Prints the path of the ciel PDK root.
 
     If a version is provided over the commandline, it prints the path to this
     version instead.
     """
+    pdk_family, _ = pdk_tuple
     if version is not None:
         version = Version(version, pdk_family)
         print(version.get_dir(pdk_root), end="")
@@ -246,7 +246,7 @@ def path_cmd(pdk_root, pdk_family, version):
 @click.command("enable")
 @opt_data_source
 @opt_github_token
-@opt_pdk_root
+@opt_pdk
 @click.option(
     "-l",
     "--include-libraries",
@@ -258,7 +258,7 @@ def path_cmd(pdk_root, pdk_family, version):
 def enable_cmd(
     data_source,
     pdk_root,
-    pdk_family,
+    pdk_tuple,
     version,
     include_libraries,
 ):
@@ -274,7 +274,7 @@ def enable_cmd(
     try:
         enable(
             pdk_root,
-            pdk_family,
+            pdk_tuple,
             version,
             include_libraries=include_libraries,
             output=console,
@@ -288,7 +288,7 @@ def enable_cmd(
 @click.command("fetch")
 @opt_data_source
 @opt_github_token
-@opt_pdk_root
+@opt_pdk
 @click.option(
     "-l",
     "--include-libraries",
@@ -300,7 +300,7 @@ def enable_cmd(
 def fetch_cmd(
     data_source,
     pdk_root,
-    pdk_family,
+    pdk_tuple,
     version,
     include_libraries,
 ):
@@ -316,10 +316,10 @@ def fetch_cmd(
 
     try:
         version = fetch(
+            pdk_root,
+            pdk_tuple,
+            version,
             data_source=data_source,
-            pdk_root=pdk_root,
-            pdk=pdk_family,
-            version=version,
             include_libraries=include_libraries,
             output=console,
         )

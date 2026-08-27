@@ -1,4 +1,4 @@
-# Copyright 2025 The American University in Cairo
+# Copyright 2025 Ciel Contributors
 #
 # Modified from the Volare project
 #
@@ -17,8 +17,7 @@
 # limitations under the License.
 import os
 import shutil
-import pathlib
-import warnings
+from pathlib import Path
 from datetime import datetime
 from dataclasses import dataclass
 from typing import Optional, List
@@ -38,7 +37,7 @@ def date_from_iso8601(string: str) -> datetime:
 
 
 def mkdirp(path):
-    return pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+    return Path(path).mkdir(parents=True, exist_ok=True)
 
 
 # -- API Variables
@@ -61,83 +60,16 @@ def _get_current_version(pdk_root: str, pdk: str) -> Optional[str]:
     return version
 
 
-def get_ciel_home(pdk_root: Optional[str] = None) -> str:
-    return pdk_root or CIEL_RESOLVED_HOME
+def get_ciel_home(pdk_root: Optional[str] = None) -> Path:
+    return Path(pdk_root or CIEL_RESOLVED_HOME)
 
 
-def get_ciel_dir(pdk_root: str, pdk: str) -> str:
-    return os.path.join(pdk_root, "ciel", pdk)
+def get_ciel_dir(pdk_root: str, pdk: str) -> Path:
+    return Path(pdk_root) / "ciel" / pdk
 
 
-def get_versions_dir(pdk_root: str, pdk: str) -> str:
-    return os.path.join(get_ciel_dir(pdk_root, pdk), "versions")
-
-
-def resolve_pdk_family(selector: Optional[str]):
-    """
-    :returns:
-        If selector is a valid PDK family, the same string.
-
-        If selector is a valid PDK variant, the family the variant belongs to.
-
-        If selector is None, the PDK_FAMILY and PDK environment variables are
-        used as fallbacks. If all are None, the function will simply return None.
-
-        Starting Ciel 3.0.0, supplying None will no longer work and the selector
-        will be a string.
-
-        If the selector is invalid, a ValueError will be raised. "ihp_sg13g2"
-        will resolve to "ihp-sg13g2" however for some semblance of backwards
-        compatibility with previous versions of Ciel/Volare.
-    """
-    if selector is None:
-        warnings.warn(
-            "Passing None to resolve_pdk_family is deprecated and will be removed in Ciel 3.0.0. Please resolve any environment variables manually.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        if environment_specified_pdk := os.getenv("PDK_FAMILY") or os.getenv("PDK"):
-            selector = environment_specified_pdk
-        if selector is None:
-            return None
-
-    if selector == "ihp_sg13g2":
-        selector = "ihp-sg13g2"
-
-    if selector in Family.by_name:
-        return selector
-
-    for pdk_family in Family.by_name.values():
-        if selector in pdk_family.variants:
-            return pdk_family.name
-
-    raise ValueError(f"'{selector}' is not a valid PDK family or variant.")
-
-
-def resolve_pdk_variant(selector: Optional[str]):
-    """
-    :returns:
-        If selector is a valid PDK variant, the same string.
-
-        If selector is a valid PDK family, the default variant of said PDK.
-
-        If selector is None, the PDK environment variables is used as a
-        fallback. If all are None, the function will simply return None.
-
-        If the selector is invalid, a ValueError will be raised.
-    """
-    selector = selector or os.getenv("PDK")
-    if selector is None:
-        return None
-
-    if family := Family.by_name.get(selector):
-        return family.default_variant
-
-    for pdk_family in Family.by_name.values():
-        if selector in pdk_family.variants:
-            return selector
-
-    raise ValueError(f"'{selector}' is not a valid PDK family or variant.")
+def get_versions_dir(pdk_root: str, pdk: str) -> Path:
+    return get_ciel_dir(pdk_root, pdk) / "versions"
 
 
 @dataclass
@@ -147,6 +79,7 @@ class Version(object):
     commit_date: Optional[datetime] = None
     upload_date: Optional[datetime] = None
     prerelease: bool = False
+    data_source_pdk_override: Optional[str] = None
 
     def __lt__(self, rhs: "Version"):
         return (self.commit_date or datetime.min) < (rhs.commit_date or datetime.min)
@@ -161,8 +94,8 @@ class Version(object):
     def is_current(self, pdk_root: str) -> bool:
         return self.name == _get_current_version(pdk_root, self.pdk)
 
-    def get_dir(self, pdk_root: str) -> str:
-        return os.path.join(get_versions_dir(pdk_root, self.pdk), self.name)
+    def get_dir(self, pdk_root: str) -> Path:
+        return get_versions_dir(pdk_root, self.pdk) / self.name
 
     def unset_current(self, pdk_root: str):
         if not self.is_installed(pdk_root):
@@ -202,14 +135,14 @@ class Version(object):
     @classmethod
     def get_all_installed(Self, pdk_root: str, pdk: str) -> List["Version"]:
         versions_dir = get_versions_dir(pdk_root, pdk)
-        mkdirp(versions_dir)
+        versions_dir.mkdir(parents=True, exist_ok=True)
         return [
             Version(
                 name=version,
                 pdk=pdk,
             )
             for version in os.listdir(versions_dir)
-            if os.path.isdir(os.path.join(versions_dir, version))
+            if (versions_dir / version).is_dir()
         ]
 
 

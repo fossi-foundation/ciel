@@ -1,3 +1,7 @@
+# Copyright 2026 Ciel Contributors
+#
+# Adapted from Volare
+#
 # Copyright 2022-2023 Efabless Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -315,6 +319,7 @@ def install_sky130(build_directory, pdk_root, version):
 
 def build(
     pdk_root: str,
+    pdk_variant: str,
     version: str,
     jobs: int = 1,
     clear_build_artifacts: bool = True,
@@ -322,7 +327,7 @@ def build(
     using_repos: Optional[Dict[str, str]] = None,
 ):
     family = Family.by_name["sky130"]
-    library_set = family.resolve_libraries(include_libraries)
+    library_set = family.resolve_libraries(include_libraries, pdk_variant)
 
     if using_repos is None:
         using_repos = {}
