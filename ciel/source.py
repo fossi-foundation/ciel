@@ -25,6 +25,7 @@ import httpx
 
 from .github import GitHubSession, RepoInfo
 from .common import Version, date_from_iso8601
+from .families import Family
 
 
 @dataclass
@@ -56,6 +57,7 @@ class GitHubReleasesDataSource(DataSource):
         self.repo = RepoInfo.from_id(repo_id)
 
     def get_available_versions(self, pdk: str) -> List[Version]:
+        pdk_family = Family.by_name[pdk]
         page = 1
         last = self.session.api(
             self.repo,
@@ -80,9 +82,12 @@ class GitHubReleasesDataSource(DataSource):
             if release["draft"]:
                 continue
 
-            family, hash = release["tag_name"].rsplit("-", maxsplit=1)
+            release_family_name, hash = release["tag_name"].rsplit("-", maxsplit=1)
 
-            if pdk != family:
+            if (
+                release_family_name != pdk_family.name
+                and release_family_name not in pdk_family.variants
+            ):
                 continue
 
             upload_date = date_from_iso8601(release["published_at"])
@@ -94,10 +99,11 @@ class GitHubReleasesDataSource(DataSource):
 
             remote_version = Version(
                 name=hash,
-                pdk=family,
+                pdk=pdk_family.name,
                 commit_date=commit_date,
                 upload_date=upload_date,
                 prerelease=release["prerelease"],
+                data_source_pdk_override=release_family_name,
             )
             versions.append(remote_version)
 
@@ -111,9 +117,11 @@ class GitHubReleasesDataSource(DataSource):
     def get_downloads_for_version(
         self, version: Version
     ) -> Tuple[httpx.Client, List[Asset]]:
+        release_family_name = version.data_source_pdk_override or version.pdk
+
         release = self.session.api(
             self.repo,
-            f"/releases/tags/{version.pdk}-{version.name}",
+            f"/releases/tags/{release_family_name}-{version.name}",
             "get",
         )
 

@@ -79,6 +79,7 @@ class Version(object):
     commit_date: Optional[datetime] = None
     upload_date: Optional[datetime] = None
     prerelease: bool = False
+    data_source_pdk_override: Optional[str] = None
 
     def __lt__(self, rhs: "Version"):
         return (self.commit_date or datetime.min) < (rhs.commit_date or datetime.min)
