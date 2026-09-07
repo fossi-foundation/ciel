@@ -1,16 +1,14 @@
 <h1 align="center">🌌 Ciel</h1>
 <p align="center">
     <a href="https://opensource.org/licenses/Apache-2.0"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0"/></a>
+    <a href="https://www.python.org"><img src="https://img.shields.io/badge/Python-3.8-3776AB.svg?style=flat&logo=python&logoColor=white" alt="Python ≥3.8" /></a>
     <img src="https://github.com/fossi-foundation/ciel/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI Status" />
     <a href="https://fossi-chat.org"><img src="https://img.shields.io/badge/Community-FOSSi%20Chat-1bb378?logo=element" alt="Invite to FOSSi Chat"/></a>
-    <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code Style: Black"/></a>
 </p>
 
 <p align="center">Ciel is a version manager (and builder) for builds of open-source process design kits (PDKs).</p>
 
 # Requirements
-* Python 3.8+ with PIP
-* macOS or GNU/Linux
 
 ## macOS
 Get [Homebrew](https://brew.sh) then:

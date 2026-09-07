@@ -208,5 +208,5 @@ def resolve_pdk_variant(selector: Optional[str]):
     raise ValueError(f"'{selector}' is not a valid PDK family or variant.")
 
 
-def resolve_pdk_selector(selector: Optional[str]) -> Tuple[str, str]:
+def resolve_pdk_selector(selector: str) -> Tuple[str, str]:
     return (resolve_pdk_family(selector), resolve_pdk_variant(selector))

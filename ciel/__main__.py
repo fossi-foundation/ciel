@@ -64,7 +64,7 @@ def output_cmd(pdk_root, pdk_selector):
             "Invoke ciel --help for assistance installing and enabling versions.",
             file=sys.stderr,
         )
-        sys.sys.exit(1)
+        sys.exit(1)
     print(version.name, end="")
 
 
@@ -212,17 +212,17 @@ def list_remote_cmd(data_source, pdk_root, pdk_selector):
     except ValueError as e:
         console = Console(stderr=True)
         console.print(f"[red]{e}")
-        sys.sys.exit(-1)
+        sys.exit(-1)
     except httpx.HTTPStatusError as e:
         console = Console(stderr=True)
         console.print(f"[red]Encountered an error when polling version list: {e}")
-        sys.sys.exit(-1)
+        sys.exit(-1)
     except httpx.NetworkError as e:
         console = Console(stderr=True)
         console.print(
             f"[red]You don't appear to be connected to the Internet. ls-remote cannot be used.: {e}"
         )
-        sys.sys.exit(-1)
+        sys.exit(-1)
 
 
 @click.command("path")

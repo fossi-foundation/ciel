@@ -140,6 +140,7 @@ class GitHubReleasesDataSource(DataSource):
                     break
         if release is None:
             family_res.raise_for_status()
+        assert release is not None  # raise_for_status is a noreturn
 
         assets = release["assets"]
         zst_files = []

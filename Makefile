@@ -11,6 +11,7 @@ dist: venv/manifest.txt
 lint: venv/manifest.txt
 	./venv/bin/ruff format --check .
 	./venv/bin/ruff check
+	./venv/bin/mypy --check-untyped-defs .
 
 venv: venv/manifest.txt
 venv/manifest.txt: ./pyproject.toml
