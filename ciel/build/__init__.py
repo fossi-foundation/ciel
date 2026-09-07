@@ -97,7 +97,7 @@ def build_cmd(
     include_libraries,
     jobs,
     pdk_root,
-    pdk,
+    pdk_selector,
     clear_build_artifacts,
     version,
     use_repo_at,
@@ -116,7 +116,7 @@ def build_cmd(
 
     build(
         pdk_root=pdk_root,
-        pdk=pdk,
+        pdk=pdk_selector,
         version=version,
         jobs=jobs,
         clear_build_artifacts=clear_build_artifacts,
@@ -241,7 +241,7 @@ def push_cmd(
     repository,
     pre,
     pdk_root,
-    pdk,
+    pdk_selector,
     version,
     push_libraries,
 ):
@@ -256,7 +256,7 @@ def push_cmd(
     try:
         push(
             pdk_root,
-            pdk,
+            pdk_selector,
             version,
             owner=owner,
             repository=repository,
