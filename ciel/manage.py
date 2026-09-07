@@ -22,7 +22,7 @@ import hashlib
 import tarfile
 import tempfile
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Union, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Union, Tuple
 
 import rich
 import httpx
@@ -38,7 +38,7 @@ from .common import (
     get_ciel_dir,
 )
 from .build import build
-from .families import Family
+from .families import Family, resolve_pdk_selector
 from .source import DataSource
 
 
@@ -101,9 +101,9 @@ def print_remote_list(
     tree = rich.tree.Tree(f"Pre-built {pdk} PDK versions")
     for remote_version in pdk_list:
         name = remote_version.name
-        assert (
-            remote_version.commit_date is not None
-        ), f"Remote version {name} has no commit date"
+        assert remote_version.commit_date is not None, (
+            f"Remote version {name} has no commit date"
+        )
         day = remote_version.commit_date.strftime("%Y.%m.%d")
         desc = f"[green]{name} ({day})"
         if remote_version.prerelease:
@@ -119,16 +119,22 @@ def print_remote_list(
 
 def fetch(
     pdk_root: str,
-    pdk_tuple: Tuple[str, str],
+    pdk: Union[Tuple[str, str], str],
     version: str,
     *,
     data_source: DataSource,
     build_if_not_found=False,
-    build_kwargs: dict = {},
+    build_kwargs: Optional[Dict[str, Any]] = None,
     include_libraries: Optional[Iterable[str]] = None,
-    output: Union[Console, io.TextIOWrapper] = Console(),
+    output: Union[Console, io.TextIOWrapper, None] = None,
 ) -> Version:
-    pdk_family_name, pdk_variant_name = pdk_tuple
+    if output is None:
+        output = Console()
+
+    if isinstance(pdk, tuple):
+        pdk_family_name, pdk_variant_name = pdk
+    else:
+        pdk_family_name, pdk_variant_name = resolve_pdk_selector(pdk)
 
     console = output
     if not isinstance(console, Console):
@@ -182,9 +188,11 @@ def fetch(
             client, assets = data_source.get_downloads_for_version(version_object)
             assets_filtered = []
             for asset in assets:
-                if asset.content == "common" and common_missing:
-                    assets_filtered.append(asset)
-                elif asset.content in missing_libraries:
+                if (
+                    asset.content == "common"
+                    and common_missing
+                    or asset.content in missing_libraries
+                ):
                     assets_filtered.append(asset)
             tarball_directory_obj = tempfile.TemporaryDirectory(suffix=".ciel")
             tarball_directory = Path(tarball_directory_obj.name)
@@ -218,7 +226,7 @@ def fetch(
                             final_path.parent.mkdir(parents=True, exist_ok=True)
                             io = tf.extractfile(file)
                             if io is None:
-                                raise IOError(
+                                raise OSError(
                                     f"Failed to unpack file in {asset.filename}'s tarball: {file.name}."
                                 )
                             with open(final_path, "wb") as f:
@@ -232,9 +240,9 @@ def fetch(
                 )
                 build(
                     pdk_root=pdk_root,
-                    pdk_tuple=pdk_tuple,
+                    pdk=pdk,
                     version=version,
-                    **build_kwargs,
+                    **(build_kwargs or {}),
                 )
             else:
                 if e.response is not None:
@@ -273,16 +281,21 @@ def fetch(
 
 def enable(
     pdk_root: str,
-    pdk_tuple: Tuple[str, str],
+    pdk: Union[str, Tuple[str, str]],
     version: str,
     *,
     data_source: DataSource,
     build_if_not_found: bool = False,
-    build_kwargs: dict = {},
+    build_kwargs: Optional[Dict[str, Any]] = None,
     include_libraries: Optional[List[str]] = None,
-    output: Union[Console, io.TextIOWrapper] = Console(),
+    output: Union[None, Console, io.TextIOWrapper] = None,
 ) -> Version:
-    pdk_family_name, _ = pdk_tuple
+    if output is None:
+        output = Console()
+    if isinstance(pdk, tuple):
+        pdk_family_name, _ = pdk
+    else:
+        pdk_family_name, _ = resolve_pdk_selector(pdk)
 
     console = output
     if not isinstance(console, Console):
@@ -301,7 +314,7 @@ def enable(
 
     fetch(
         pdk_root,
-        pdk_tuple,
+        pdk,
         version,
         data_source=data_source,
         build_if_not_found=build_if_not_found,

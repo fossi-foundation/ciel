@@ -53,7 +53,8 @@ def _get_current_version(pdk_root: str, pdk: str) -> Optional[str]:
     mkdirp(current_file_dir)
     version = None
     try:
-        version = open(current_file).read().strip()
+        with open(current_file, encoding="utf8") as f:
+            version = f.read().strip()
     except FileNotFoundError:
         pass
 
@@ -73,13 +74,12 @@ def get_versions_dir(pdk_root: str, pdk: str) -> Path:
 
 
 @dataclass
-class Version(object):
+class Version:
     name: str
     pdk: str
     commit_date: Optional[datetime] = None
     upload_date: Optional[datetime] = None
     prerelease: bool = False
-    data_source_pdk_override: Optional[str] = None
 
     def __lt__(self, rhs: "Version"):
         return (self.commit_date or datetime.min) < (rhs.commit_date or datetime.min)
@@ -181,7 +181,8 @@ def resolve_version(
                     "Any of ./tool_metadata.yml or ./dependencies/tool_metadata.yml not found. You'll need to specify the file path or the commits explicitly."
                 )
 
-    tool_metadata = yaml.safe_load(open(tool_metadata_file_path).read())
+    with open(tool_metadata_file_path, encoding="utf8") as f:
+        tool_metadata = yaml.safe_load(f)
 
     open_pdks_list = [tool for tool in tool_metadata if tool["name"] == "open_pdks"]
 

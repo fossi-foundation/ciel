@@ -9,9 +9,8 @@ dist: venv/manifest.txt
 
 .PHONY: lint
 lint: venv/manifest.txt
-	./venv/bin/black --check .
-	./venv/bin/flake8 .
-	./venv/bin/mypy --check-untyped-defs .
+	./venv/bin/ruff format --check .
+	./venv/bin/ruff check
 
 venv: venv/manifest.txt
 venv/manifest.txt: ./pyproject.toml

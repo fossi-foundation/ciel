@@ -26,7 +26,9 @@ def __get_version():
         repo_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         pyproject_path = os.path.join(repo_directory, "pyproject.toml")
         try:
-            match = rx.search(open(pyproject_path, encoding="utf8").read())
+            with open(pyproject_path, encoding="utf8") as f:
+                pyproject_toml_str = f.read()
+            match = rx.search(pyproject_toml_str)
             assert match is not None, "pyproject.toml found, but without a version"
             return match[1]
         except FileNotFoundError:

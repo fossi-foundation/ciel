@@ -16,13 +16,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import sys
 import uuid
 import pathlib
 import tarfile
 import tempfile
 import importlib
 import subprocess
-from typing import Optional, List, Dict, Tuple
+from typing import Optional, List, Dict, Tuple, Union
 
 import click
 import zstandard as zstd
@@ -45,12 +46,12 @@ from ..click_common import (
     opt_pdk,
     arg_version,
 )
-from ..families import Family
+from ..families import Family, resolve_pdk_selector
 
 
 def build(
     pdk_root: str,
-    pdk_tuple: Tuple[str, str],
+    pdk: Union[str, Tuple[str, str]],
     version: str,
     jobs: int = 1,
     sram: bool = True,  # Deprecated
@@ -58,7 +59,10 @@ def build(
     include_libraries: Optional[List[str]] = None,
     use_repo_at: Optional[List[str]] = None,
 ):
-    pdk_family, pdk_variant = pdk_tuple
+    if isinstance(pdk, tuple):
+        pdk_family_name, pdk_variant_name = pdk
+    else:
+        pdk_family_name, pdk_variant_name = resolve_pdk_selector(pdk)
 
     use_repos = {}
     if use_repo_at is not None:
@@ -66,12 +70,12 @@ def build(
             name, path = repo.split("=")
             use_repos[name] = os.path.abspath(path)
 
-    if pdk_family not in Family.by_name:
-        raise Exception(f"Unsupported PDK family '{pdk_family}'.")
+    if pdk_family_name not in Family.by_name:
+        raise ValueError(f"Unsupported PDK family '{pdk_family_name}'.")
 
     kwargs = {
         "pdk_root": pdk_root,
-        "pdk_variant": pdk_variant,
+        "pdk_variant": pdk_variant_name,
         "version": version,
         "jobs": jobs,
         "clear_build_artifacts": clear_build_artifacts,
@@ -79,7 +83,7 @@ def build(
         "using_repos": use_repos,
     }
 
-    build_module = importlib.import_module(f".{pdk_family}", package=__name__)
+    build_module = importlib.import_module(f".{pdk_family_name}", package=__name__)
     build_function = build_module.build
     build_function(**kwargs)
 
@@ -93,7 +97,7 @@ def build_cmd(
     include_libraries,
     jobs,
     pdk_root,
-    pdk_tuple,
+    pdk,
     clear_build_artifacts,
     version,
     use_repo_at,
@@ -112,7 +116,7 @@ def build_cmd(
 
     build(
         pdk_root=pdk_root,
-        pdk_tuple=pdk_tuple,
+        pdk=pdk,
         version=version,
         jobs=jobs,
         clear_build_artifacts=clear_build_artifacts,
@@ -123,7 +127,7 @@ def build_cmd(
 
 def push(
     pdk_root,
-    pdk_tuple,
+    pdk,
     version,
     *,
     owner,
@@ -133,7 +137,10 @@ def push(
 ):
     # variant doesn't matter, we're pushing whatever we can unless an explicit
     # list is provided
-    pdk_family_name, _ = pdk_tuple
+    if isinstance(pdk, tuple):
+        pdk_family_name, _ = pdk
+    else:
+        pdk_family_name, _ = resolve_pdk_selector(pdk)
 
     pdk_family = Family.by_name[pdk_family_name]
 
@@ -178,12 +185,13 @@ def push(
         for name, files in collections.items():
             tarball_path = os.path.join(tarball_directory, f"{name}.tar.zst")
             task = progress.add_task(f"Compressing {name}…", total=len(files))
-            with zstd.open(tarball_path, mode="wb") as stream:
-                with tarfile.TarFile(fileobj=stream, mode="w") as tf:
-                    for i, file in enumerate(files):
-                        progress.update(task, completed=i + 1)
-                        path_in_tarball = os.path.relpath(file, version_directory)
-                        tf.add(file, arcname=path_in_tarball)
+            with zstd.open(tarball_path, mode="wb") as stream, tarfile.TarFile(
+                fileobj=stream, mode="w"
+            ) as tf:
+                for i, file in enumerate(files):
+                    progress.update(task, completed=i + 1)
+                    path_in_tarball = os.path.relpath(file, version_directory)
+                    tf.add(file, arcname=path_in_tarball)
             console.log(f"\nCompressed to {tarball_path}.")
             progress.remove_task(task)
             final_tarballs.append(tarball_path)
@@ -233,7 +241,7 @@ def push_cmd(
     repository,
     pre,
     pdk_root,
-    pdk_tuple,
+    pdk,
     version,
     push_libraries,
 ):
@@ -248,7 +256,7 @@ def push_cmd(
     try:
         push(
             pdk_root,
-            pdk_tuple,
+            pdk,
             version,
             owner=owner,
             repository=repository,
@@ -257,4 +265,4 @@ def push_cmd(
         )
     except Exception as e:
         console.print(f"[red]Failed to push version: {e}")
-        exit(-1)
+        sys.exit(-1)

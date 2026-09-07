@@ -45,15 +45,15 @@ from .build import (
 )
 from .github import opt_github_token
 from .source import opt_data_source
-from .families import Family
+from .families import Family, resolve_pdk_family
 
 
 @click.command("output")
 @opt_pdk
-def output_cmd(pdk_root, pdk_tuple):
+def output_cmd(pdk_root, pdk_selector):
     """Outputs the currently enabled PDK version."""
 
-    pdk_family, _ = pdk_tuple
+    pdk_family = resolve_pdk_family(pdk_selector)
     version = Version.get_current(pdk_root, pdk_family)
     if version is None:
         print(
@@ -64,7 +64,7 @@ def output_cmd(pdk_root, pdk_tuple):
             "Invoke ciel --help for assistance installing and enabling versions.",
             file=sys.stderr,
         )
-        sys.exit(1)
+        sys.sys.exit(1)
     print(version.name, end="")
 
 
@@ -77,10 +77,10 @@ def output_cmd(pdk_root, pdk_tuple):
     expose_value=False,
     prompt="Are you sure? This will delete all non-enabled versions of the PDK from your computer.",
 )
-def prune_cmd(pdk_root, pdk_tuple):
+def prune_cmd(pdk_root, pdk_selector):
     """Removes all PDKs other than, if it exists, the one currently set as 'enabled' in the PDK root."""
 
-    pdk_family, _ = pdk_tuple
+    pdk_family = resolve_pdk_family(pdk_selector)
     pdk_versions = Version.get_all_installed(pdk_root, pdk_family)
     for version in pdk_versions:
         if version.is_current(pdk_root):
@@ -114,7 +114,7 @@ def optimize_cmd(pdk_root, pdk_family, version):
 
 @click.command("optimize-all")
 @opt_pdk
-def optimize_all_cmd(pdk_root, pdk_tuple):
+def optimize_all_cmd(pdk_root, pdk_selector):
     """
     [Experimental] This command attempts to save space by converting identical
     files across variants for all versions of a specific PDK family to symbolic
@@ -127,7 +127,7 @@ def optimize_all_cmd(pdk_root, pdk_tuple):
     """
 
     recovered = 0
-    pdk_family, _ = pdk_tuple
+    pdk_family = resolve_pdk_family(pdk_selector)
     for version in Version.get_all_installed(pdk_root, pdk_family):
         recovered += optimize(pdk_root, version)
 
@@ -145,24 +145,24 @@ def optimize_all_cmd(pdk_root, pdk_tuple):
     prompt="Are you sure? This will delete this version of the PDK from your computer.",
 )
 @arg_version
-def rm_cmd(pdk_root, pdk_tuple, version):
+def rm_cmd(pdk_root, pdk_selector, version):
     """Removes the PDK version specified."""
 
-    pdk_family, _ = pdk_tuple
+    pdk_family = resolve_pdk_family(pdk_selector)
     version_object = Version(version, pdk_family)
     try:
         version_object.uninstall(pdk_root)
         print(f"Deleted {version}.")
     except Exception as e:
         print(f"Failed to delete: {e}", file=sys.stderr)
-        exit(1)
+        sys.exit(1)
 
 
 @click.command("ls")
 @opt_data_source
 @opt_github_token
 @opt_pdk
-def list_cmd(data_source, pdk_root, pdk_tuple):
+def list_cmd(data_source, pdk_root, pdk_selector):
     """
     Lists PDK versions that are locally installed.
 
@@ -170,7 +170,7 @@ def list_cmd(data_source, pdk_root, pdk_tuple):
     in plain text.
     """
 
-    pdk_family, _ = pdk_tuple
+    pdk_family = resolve_pdk_family(pdk_selector)
     pdk_versions = Version.get_all_installed(pdk_root, pdk_family)
 
     if sys.stdout.isatty():
@@ -191,7 +191,7 @@ def list_cmd(data_source, pdk_root, pdk_tuple):
 @opt_github_token
 @opt_data_source
 @opt_pdk
-def list_remote_cmd(data_source, pdk_root, pdk_tuple):
+def list_remote_cmd(data_source, pdk_root, pdk_selector):
     """
     Lists PDK versions that are remotely available.
 
@@ -199,7 +199,7 @@ def list_remote_cmd(data_source, pdk_root, pdk_tuple):
     in plain text.
     """
 
-    pdk_family, _ = pdk_tuple
+    pdk_family = resolve_pdk_family(pdk_selector)
     try:
         pdk_versions = data_source.get_available_versions(pdk_family)
 
@@ -212,30 +212,30 @@ def list_remote_cmd(data_source, pdk_root, pdk_tuple):
     except ValueError as e:
         console = Console(stderr=True)
         console.print(f"[red]{e}")
-        sys.exit(-1)
+        sys.sys.exit(-1)
     except httpx.HTTPStatusError as e:
         console = Console(stderr=True)
         console.print(f"[red]Encountered an error when polling version list: {e}")
-        sys.exit(-1)
+        sys.sys.exit(-1)
     except httpx.NetworkError as e:
         console = Console(stderr=True)
         console.print(
             f"[red]You don't appear to be connected to the Internet. ls-remote cannot be used.: {e}"
         )
-        sys.exit(-1)
+        sys.sys.exit(-1)
 
 
 @click.command("path")
 @opt_pdk
 @arg_version
-def path_cmd(pdk_root, pdk_tuple, version):
+def path_cmd(pdk_root, pdk_selector, version):
     """
     Prints the path of the ciel PDK root.
 
     If a version is provided over the commandline, it prints the path to this
     version instead.
     """
-    pdk_family, _ = pdk_tuple
+    pdk_family = resolve_pdk_family(pdk_selector)
     if version is not None:
         version = Version(version, pdk_family)
         print(version.get_dir(pdk_root), end="")
@@ -258,7 +258,7 @@ def path_cmd(pdk_root, pdk_tuple, version):
 def enable_cmd(
     data_source,
     pdk_root,
-    pdk_tuple,
+    pdk_selector,
     version,
     include_libraries,
 ):
@@ -274,7 +274,7 @@ def enable_cmd(
     try:
         enable(
             pdk_root,
-            pdk_tuple,
+            pdk_selector,
             version,
             include_libraries=include_libraries,
             output=console,
@@ -282,7 +282,7 @@ def enable_cmd(
         )
     except Exception as e:
         console.print(f"[red]{e}")
-        exit(-1)
+        sys.exit(-1)
 
 
 @click.command("fetch")
@@ -300,7 +300,7 @@ def enable_cmd(
 def fetch_cmd(
     data_source,
     pdk_root,
-    pdk_tuple,
+    pdk_selector,
     version,
     include_libraries,
 ):
@@ -317,7 +317,7 @@ def fetch_cmd(
     try:
         version = fetch(
             pdk_root,
-            pdk_tuple,
+            pdk_selector,
             version,
             data_source=data_source,
             include_libraries=include_libraries,
@@ -327,7 +327,7 @@ def fetch_cmd(
 
     except Exception as e:
         console.print(f"[red]{e}")
-        exit(-1)
+        sys.exit(-1)
 
 
 @click.command("ls-pdks")
@@ -399,7 +399,7 @@ except ModuleNotFoundError as e:
         file=sys.stderr,
     )
     print("This is a fatal error. Ciel will now quit.", file=sys.stderr)
-    exit(-1)
+    sys.exit(-1)
 
 
 if __name__ == "__main__":

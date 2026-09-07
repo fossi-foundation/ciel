@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import sys
 import shutil
 import subprocess
 from pathlib import Path
@@ -43,21 +44,22 @@ def get_ihp(
         console = Console()
 
         if repo_path is None:
-            with Progress() as progress:
-                with ThreadPoolExecutor(max_workers=jobs) as executor:
-                    gmc = GitMultiClone(build_directory, progress)
-                    ihp_future = executor.submit(
-                        GitMultiClone.clone,
-                        gmc,
-                        ihp_repo.link,
-                        version,
-                    )
-                    repo = ihp_future.result()
-                    current_task = progress.add_task("Updating submodules…", total=100)
-                    repo.init_submodule(
-                        callback=lambda x: progress.update(current_task, completed=x)
-                    )
-                    repo_path = repo.path
+            with Progress() as progress, ThreadPoolExecutor(
+                max_workers=jobs
+            ) as executor:
+                gmc = GitMultiClone(build_directory, progress)
+                ihp_future = executor.submit(
+                    GitMultiClone.clone,
+                    gmc,
+                    ihp_repo.link,
+                    version,
+                )
+                repo = ihp_future.result()
+                current_task = progress.add_task("Updating submodules…", total=100)
+                repo.init_submodule(
+                    callback=lambda x: progress.update(current_task, completed=x)
+                )
+                repo_path = repo.path
             console.log(f"Done fetching {ihp_repo.name}.")
         else:
             console.log(f"Using IHP-Open-PDK at {repo_path} unaltered.")
@@ -67,7 +69,7 @@ def get_ihp(
     except subprocess.CalledProcessError as e:
         print(e)
         print(e.stderr)
-        exit(-1)
+        sys.exit(-1)
 
 
 def build_ihp(build_directory, ihp_path):

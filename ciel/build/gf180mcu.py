@@ -17,6 +17,7 @@
 # limitations under the License.
 import os
 import io
+import sys
 import json
 import shlex
 import shutil
@@ -50,18 +51,19 @@ def get_open_pdks(
 
         open_pdks_repo = None
         if repo_path is None:
-            with Progress() as progress:
-                with ThreadPoolExecutor(max_workers=jobs) as executor:
-                    gmc = GitMultiClone(build_directory, progress)
-                    open_pdks_future = executor.submit(
-                        GitMultiClone.clone,
-                        gmc,
-                        opdks_repo.link,
-                        version,
-                        default_branch="main",
-                    )
-                    open_pdks_repo = open_pdks_future.result()
-                    repo_path = open_pdks_repo.path
+            with Progress() as progress, ThreadPoolExecutor(
+                max_workers=jobs
+            ) as executor:
+                gmc = GitMultiClone(build_directory, progress)
+                open_pdks_future = executor.submit(
+                    GitMultiClone.clone,
+                    gmc,
+                    opdks_repo.link,
+                    version,
+                    default_branch="main",
+                )
+                open_pdks_repo = open_pdks_future.result()
+                repo_path = open_pdks_repo.path
 
             console.log(f"Done fetching {open_pdks_repo.name}.")
         else:
@@ -70,7 +72,8 @@ def get_open_pdks(
         patch_open_pdks(repo_path)
 
         try:
-            json_raw = open(f"{repo_path}/gf180mcu/gf180mcu.json").read()
+            with open(f"{repo_path}/gf180mcu/gf180mcu.json", encoding="utf8") as f:
+                json_raw = f.read()
             cpp = pcpp.Preprocessor()
             cpp.line_directive = None
             cpp.parse(json_raw)
@@ -95,7 +98,7 @@ def get_open_pdks(
     except subprocess.CalledProcessError as e:
         print(e)
         print(e.stderr)
-        exit(-1)
+        sys.exit(-1)
 
 
 LIB_FLAG_MAP = {
@@ -124,29 +127,29 @@ def build_variants(
         console = Console()
 
         def run_sh(script, log_to):
-            output_file = open(log_to, "w")
-            try:
-                subprocess.check_call(
-                    ["sh", "-c", script],
-                    cwd=open_pdks_path,
-                    stdout=output_file,
-                    stderr=output_file,
-                    stdin=open(os.devnull),
-                )
-            except subprocess.CalledProcessError as e:
-                console.log(
-                    f"An error occurred while building the PDK. Check {log_to} for more information."
-                )
-                raise e
+            with open(log_to, "w", encoding="utf8") as output_file, open(
+                os.devnull, encoding="utf8"
+            ) as devnull:
+                try:
+                    subprocess.check_call(
+                        ["sh", "-c", script],
+                        cwd=open_pdks_path,
+                        stdout=output_file,
+                        stderr=output_file,
+                        stdin=devnull,
+                    )
+                except subprocess.CalledProcessError as e:
+                    console.log(
+                        f"An error occurred while building the PDK. Check {log_to} for more information."
+                    )
+                    raise e from None
 
-        library_flags = set([LIB_FLAG_MAP[library] for library in include_libraries])
-        library_flags_disable = set(
-            [
-                LIB_FLAG_MAP[library].replace("enable", "disable")
-                for library in LIB_FLAG_MAP
-                if library not in include_libraries
-            ]
-        )
+        library_flags = {LIB_FLAG_MAP[library] for library in include_libraries}
+        library_flags_disable = {
+            LIB_FLAG_MAP[library].replace("enable", "disable")
+            for library in LIB_FLAG_MAP
+            if library not in include_libraries
+        }
         magic_dirname = os.path.dirname(magic_bin)
 
         configuration_flags = ["--enable-gf180mcu-pdk", "--with-reference"] + list(
@@ -192,7 +195,7 @@ def build_variants(
     except subprocess.CalledProcessError as e:
         print(e)
         print(e.stderr)
-        exit(-1)
+        sys.exit(-1)
 
 
 def install_gf180mcu(build_directory, pdk_root, version):
@@ -257,7 +260,7 @@ def build(
     magic_bin = shutil.which("magic")
     if magic_bin is None:
         print("Magic is either not installed or not in PATH.")
-        exit(-1)
+        sys.exit(-1)
 
     build_variants(
         magic_bin,

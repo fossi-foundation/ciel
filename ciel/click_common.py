@@ -24,7 +24,7 @@ from .common import (
     CIEL_RESOLVED_HOME,
     resolve_version,
 )
-from .families import Family, resolve_pdk_family, resolve_pdk_variant
+from .families import Family, resolve_pdk_family
 
 opt = partial(click.option, show_default=True)
 
@@ -92,19 +92,18 @@ class PDKOption(click.Option):
             value = self.callback(ctx, self, value)
 
         try:
-            family = resolve_pdk_family(value)
-            variant = resolve_pdk_variant(value)
+            resolve_pdk_family(value)
         except ValueError as e:
             raise click.BadParameter(str(e), ctx=ctx, param=self)
 
-        return (family, variant)
+        return value  # pass selector as is, we just needed to validate it
 
 
 def opt_pdk(function: Callable):
     function = opt(
         "--pdk-family",
         "--pdk",
-        "pdk_tuple",
+        "pdk_selector",
         cls=PDKOption,
         required=True,
         envvar=["PDK_FAMILY", "PDK"],

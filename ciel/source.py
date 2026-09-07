@@ -35,7 +35,7 @@ class Asset:
     url: str
 
 
-class DataSource(object):
+class DataSource:
     factory: ClassVar[Dict[str, Type["DataSource"]]] = {}
     default: ClassVar["DataSource"]
 
@@ -103,7 +103,6 @@ class GitHubReleasesDataSource(DataSource):
                 commit_date=commit_date,
                 upload_date=upload_date,
                 prerelease=release["prerelease"],
-                data_source_pdk_override=release_family_name,
             )
             versions.append(remote_version)
 
@@ -117,13 +116,30 @@ class GitHubReleasesDataSource(DataSource):
     def get_downloads_for_version(
         self, version: Version
     ) -> Tuple[httpx.Client, List[Asset]]:
-        release_family_name = version.data_source_pdk_override or version.pdk
-
-        release = self.session.api(
+        family_res: httpx.Response = self.session.api(
             self.repo,
-            f"/releases/tags/{release_family_name}-{version.name}",
+            f"/releases/tags/{version.pdk}-{version.name}",
             "get",
+            raw_request=True,
         )
+        release = None
+        if family_res.status_code // 100 == 2:
+            release = family_res.json()
+        elif family_res.status_code == 404 and version.pdk in Family.by_name:
+            # try variants because ihp was renamed (grumble)
+            variants = Family.by_name[version.pdk].variants
+            for variant in variants:
+                variant_res: httpx.Response = self.session.api(
+                    self.repo,
+                    f"/releases/tags/{variant}-{version.name}",
+                    "get",
+                    raw_request=True,
+                )
+                if variant_res.status_code != 404:
+                    release = variant_res.json()
+                    break
+        if release is None:
+            family_res.raise_for_status()
 
         assets = release["assets"]
         zst_files = []

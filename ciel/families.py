@@ -17,13 +17,13 @@
 # limitations under the License.
 import fnmatch
 from dataclasses import dataclass
-from typing import Iterable, List, Dict, Optional, Set, ClassVar
+from typing import Iterable, List, Dict, Optional, Set, ClassVar, Tuple
 
 from .github import RepoInfo, opdks_repo, ihp_repo
 
 
 @dataclass
-class Family(object):
+class Family:
     by_name: ClassVar[Dict[str, "Family"]] = {}
     by_variant: ClassVar[Dict[str, "Family"]] = {}
 
@@ -206,3 +206,7 @@ def resolve_pdk_variant(selector: Optional[str]):
         return family.default_variant
 
     raise ValueError(f"'{selector}' is not a valid PDK family or variant.")
+
+
+def resolve_pdk_selector(selector: Optional[str]) -> Tuple[str, str]:
+    return (resolve_pdk_family(selector), resolve_pdk_variant(selector))
