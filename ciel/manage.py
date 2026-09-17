@@ -159,7 +159,7 @@ def fetch(
         common_missing = True
 
     for library in library_set:
-        if library not in pdk_family.all_libraries:
+        if library not in pdk_family.get_all_libraries(pdk_variant_name):
             raise RuntimeError(f"Unknown library {library}.")
         found = False
         for variant in variants:
