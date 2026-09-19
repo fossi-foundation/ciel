@@ -1,16 +1,14 @@
 <h1 align="center">🌌 Ciel</h1>
 <p align="center">
     <a href="https://opensource.org/licenses/Apache-2.0"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0"/></a>
+    <a href="https://www.python.org"><img src="https://img.shields.io/badge/Python-3.8-3776AB.svg?style=flat&logo=python&logoColor=white" alt="Python ≥3.8" /></a>
     <img src="https://github.com/fossi-foundation/ciel/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI Status" />
     <a href="https://fossi-chat.org"><img src="https://img.shields.io/badge/Community-FOSSi%20Chat-1bb378?logo=element" alt="Invite to FOSSi Chat"/></a>
-    <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code Style: Black"/></a>
 </p>
 
 <p align="center">Ciel is a version manager (and builder) for builds of open-source process design kits (PDKs).</p>
 
 # Requirements
-* Python 3.8+ with PIP
-* macOS or GNU/Linux
 
 ## macOS
 Get [Homebrew](https://brew.sh) then:
@@ -46,11 +44,11 @@ ciel --version
 # About the builds
 In its current inception, ciel supports builds of **sky130** and **gf180mcu** PDKs using [Open-PDKs](https://github.com/rtimothyedwards/open_pdks), including the following libraries:
 
-|sky130|gf180mcu|ihp-sg13g2|
+|sky130|gf180mcu|ihp-sg13|
 |-|-|-|
 |sky130_fd_io|gf180mcu_fd_io|sg13g2_io|
 |sky130_fd_pr|gf180mcu_fd_pr|sg13g2_pr|
-|sky130_fd_pr_reram|gf180mcu_fd_pr|sg13g2_pr|
+|sky130_fd_pr_reram|-|-|
 |sky130_fd_sc_hd|gf180mcu_fd_sc_mcu7t5v0|sg13g2_stdcell|
 |sky130_ml_xx_hd|gf180mcu_fd_sc_mcu9t5v0|-|
 |sky130_fd_sc_hvl|gf180mcu_osu_sc_gp9t3v3|-|

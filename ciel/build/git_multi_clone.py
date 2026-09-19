@@ -22,7 +22,7 @@ from rich.progress import Progress
 from ..common import mkdirp
 
 
-class Repository(object):
+class Repository:
     @classmethod
     def from_path(Self, path):
         name = os.path.basename(path)
@@ -30,9 +30,11 @@ class Repository(object):
             ["git", "remote", "get-url", "origin"], stderr=subprocess.PIPE
         ).strip()
 
-        remote_branch_info = open(
-            os.path.join(path, ".git", "refs", "remotes", "origin", "HEAD")
-        ).read()
+        with open(
+            os.path.join(path, ".git", "refs", "remotes", "origin", "HEAD"),
+            encoding="utf8",
+        ) as f:
+            remote_branch_info = f.read()
         remote_branch = os.path.basename(remote_branch_info)
 
         return Self(name, url, path, remote_branch)
@@ -78,9 +80,8 @@ class Repository(object):
                 break
             if char_read in ["\n", "\r"]:
                 match = ro_rx.search(buffer)
-                if match is not None:
-                    if callback is not None:
-                        callback(int(match[1]))
+                if match is not None and callback is not None:
+                    callback(int(match[1]))
                 buffer = ""
             else:
                 buffer += char_read
@@ -122,9 +123,8 @@ class Repository(object):
                 break
             if char_read in ["\n", "\r"]:
                 match = ro_rx.search(buffer)
-                if match is not None:
-                    if callback is not None:
-                        callback(int(match[1]))
+                if match is not None and callback is not None:
+                    callback(int(match[1]))
                 buffer = ""
             else:
                 buffer += char_read
@@ -145,7 +145,7 @@ class Repository(object):
                 cwd=self.path,
                 stderr=subprocess.PIPE,
             )
-        except Exception:
+        except Exception:  # noqa: S110
             pass
         subprocess.check_output(
             ["git", "checkout", "-f", "-b", "current", commit],
@@ -177,9 +177,8 @@ class Repository(object):
                 break
             if char_read in ["\n", "\r"]:
                 match = ro_rx.search(buffer)
-                if match is not None:
-                    if callback is not None:
-                        callback(int(match[1]))
+                if match is not None and callback is not None:
+                    callback(int(match[1]))
                 buffer = ""
             else:
                 buffer += char_read
@@ -187,7 +186,7 @@ class Repository(object):
         process.wait()
 
 
-class GitMultiClone(object):
+class GitMultiClone:
     progress: Progress
 
     def __init__(self, folder, progress):

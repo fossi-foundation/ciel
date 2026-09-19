@@ -1,4 +1,4 @@
-# Copyright 2025 The American University in Cairo
+# Copyright 2025 Ciel Contributors
 #
 # Modified from the Volare project
 #
@@ -25,6 +25,7 @@ import httpx
 
 from .github import GitHubSession, RepoInfo
 from .common import Version, date_from_iso8601
+from .families import Family
 
 
 @dataclass
@@ -34,7 +35,7 @@ class Asset:
     url: str
 
 
-class DataSource(object):
+class DataSource:
     factory: ClassVar[Dict[str, Type["DataSource"]]] = {}
     default: ClassVar["DataSource"]
 
@@ -56,6 +57,7 @@ class GitHubReleasesDataSource(DataSource):
         self.repo = RepoInfo.from_id(repo_id)
 
     def get_available_versions(self, pdk: str) -> List[Version]:
+        pdk_family = Family.by_name[pdk]
         page = 1
         last = self.session.api(
             self.repo,
@@ -80,9 +82,12 @@ class GitHubReleasesDataSource(DataSource):
             if release["draft"]:
                 continue
 
-            family, hash = release["tag_name"].rsplit("-", maxsplit=1)
+            release_family_name, hash = release["tag_name"].rsplit("-", maxsplit=1)
 
-            if pdk != family:
+            if (
+                release_family_name != pdk_family.name
+                and release_family_name not in pdk_family.variants
+            ):
                 continue
 
             upload_date = date_from_iso8601(release["published_at"])
@@ -94,7 +99,7 @@ class GitHubReleasesDataSource(DataSource):
 
             remote_version = Version(
                 name=hash,
-                pdk=family,
+                pdk=pdk_family.name,
                 commit_date=commit_date,
                 upload_date=upload_date,
                 prerelease=release["prerelease"],
@@ -111,11 +116,31 @@ class GitHubReleasesDataSource(DataSource):
     def get_downloads_for_version(
         self, version: Version
     ) -> Tuple[httpx.Client, List[Asset]]:
-        release = self.session.api(
+        family_res: httpx.Response = self.session.api(
             self.repo,
             f"/releases/tags/{version.pdk}-{version.name}",
             "get",
+            raw_request=True,
         )
+        release = None
+        if family_res.status_code // 100 == 2:
+            release = family_res.json()
+        elif family_res.status_code == 404 and version.pdk in Family.by_name:
+            # try variants because ihp was renamed (grumble)
+            variants = Family.by_name[version.pdk].variants
+            for variant in variants:
+                variant_res: httpx.Response = self.session.api(
+                    self.repo,
+                    f"/releases/tags/{variant}-{version.name}",
+                    "get",
+                    raw_request=True,
+                )
+                if variant_res.status_code != 404:
+                    release = variant_res.json()
+                    break
+        if release is None:
+            family_res.raise_for_status()
+        assert release is not None  # raise_for_status is a noreturn
 
         assets = release["assets"]
         zst_files = []

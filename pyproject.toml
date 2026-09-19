@@ -1,6 +1,10 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "ciel"
-version = "2.6.1"
+version = "3.0.0"
 description = "An PDK builder/version manager for PDKs in the open_pdks format"
 authors = ["Mohamed Gaber <me@donn.website>", "Efabless Corporation"]
 readme = "Readme.md"
@@ -26,8 +30,7 @@ zstandard = ">=0.19.0,<1"
 
 [tool.poetry.group.dev.dependencies]
 wheel = "*"
-black = ">=24.4.0,<25"
-flake8 = ">=4"
+ruff = ">=0.16.6,<0.17.0"
 mypy = ">=1.9.0,<1.10.0"
 types-PyYAML = "*"
 types-setuptools = "*"
@@ -37,10 +40,19 @@ types-attrs = "*"
 [tool.poetry.scripts]
 ciel = "ciel.__main__:cli"
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.ruff]
+target-version = "py38"
 
-[tool.black]
-include = 'ciel/[\w\-]+.py|ciel/build/[\w\-]+.py'
-exclude = '.git|venv|.venv|.mypy_cache|(?<!ciel/)build|__pycache__|dist'
+[tool.ruff.lint]
+ignore = [
+    # We sort imports vaguely by length
+    "I",
+    # See GitHub issue #131
+    "BLE001",
+    # Will need to update like 80 billion annotations
+    "FA100", 
+    # ihp-sg13 is an invalid module name
+    "N999",
+    # Noisy
+    "DTZ"
+]

@@ -1,4 +1,4 @@
-# Copyright 2025 The American University in Cairo
+# Copyright 2025 Ciel Contributors
 #
 # Modified from the Volare project
 #
@@ -62,7 +62,7 @@ ihp_repo = RepoInfo(
 
 
 class GitHubSession(httpx.Client):
-    class Token(object):
+    class Token:
         override: ClassVar[Optional[str]] = None
 
         @classmethod
@@ -75,7 +75,7 @@ class GitHubSession(httpx.Client):
                     ["gh", "auth", "token"],
                     encoding="utf8",
                 ).strip()
-            except Exception:
+            except Exception:  # noqa: S110
                 pass
 
             # 1. Higher priority: environment GITHUB_TOKEN
@@ -117,7 +117,7 @@ class GitHubSession(httpx.Client):
                     f"Invalid SOCKS proxy: Ciel only supports http://, https:// and socks5:// schemes: {e.args[0]}",
                     file=sys.stderr,
                 )
-                exit(-1)
+                sys.exit(-1)
             else:
                 raise e from None
         github_token = github_token or GitHubSession.Token.get_gh_token()
@@ -136,15 +136,18 @@ class GitHubSession(httpx.Client):
         endpoint: str,
         method: str,
         *args,
+        raw_request=False,
         **kwargs,
     ) -> Any:
         url = repo.api + endpoint
-        req = self.request(method, url, *args, **kwargs)
-        req.raise_for_status()
+        res = self.request(method, url, *args, **kwargs)
+        if raw_request:
+            return res
+        res.raise_for_status()
         try:
-            return req.json()
+            return res.json()
         except ValueError as e:
-            raise ValueError(f"Request {req.url} returned invalid JSON: {e}") from None
+            raise ValueError(f"Request {res.url} returned invalid JSON: {e}") from None
 
     @classmethod
     def get_user_agent(Self) -> str:
@@ -165,6 +168,7 @@ def get_commit_date(
         return None
 
     date = response["commit"]["author"]["date"]
+    print(date)
     commit_date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
     return commit_date
 

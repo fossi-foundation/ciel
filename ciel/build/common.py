@@ -13,6 +13,7 @@
 # limitations under the License.
 import os
 import re
+import sys
 import shutil
 import subprocess
 
@@ -66,8 +67,9 @@ def open_pdks_patch_gnu_sed(at_path: str):
     shutil.move(at_path, backup_path)
 
     with open(backup_path, "r") as file_in, open(at_path, "w") as file_out:
-        for line in file_in:
-            file_out.write(line.replace("${SED} -i ", "${SED} -i.bak "))
+        file_out.writelines(
+            line.replace("${SED} -i ", "${SED} -i.bak ") for line in file_in
+        )
 
 
 def patch_open_pdks(at_path: str):
@@ -98,7 +100,7 @@ def patch_open_pdks(at_path: str):
         print(
             f"Commit {head} cannot be built using Ciel: the minimum version of open_pdks buildable with Ciel is 1.0.381."
         )
-        exit(-1)
+        sys.exit(-1)
 
     gf180mcu_sources_ok = is_ancestor("c1e2118846fd216b2c065a216950e75d2d67ccb8")
     if not gf180mcu_sources_ok:

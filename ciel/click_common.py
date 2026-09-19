@@ -1,4 +1,4 @@
-# Copyright 2025 The American University in Cairo
+# Copyright 2025 Ciel Contributors
 #
 # Adapted from the Volare project
 #
@@ -22,10 +22,9 @@ import click
 
 from .common import (
     CIEL_RESOLVED_HOME,
-    resolve_pdk_family,
     resolve_version,
 )
-from .families import Family
+from .families import Family, resolve_pdk_family
 
 opt = partial(click.option, show_default=True)
 
@@ -93,21 +92,22 @@ class PDKOption(click.Option):
             value = self.callback(ctx, self, value)
 
         try:
-            resolved = resolve_pdk_family(value)
+            resolve_pdk_family(value)
         except ValueError as e:
             raise click.BadParameter(str(e), ctx=ctx, param=self)
 
-        return resolved
+        return value  # pass selector as is, we just needed to validate it
 
 
-def opt_pdk_root(function: Callable):
+def opt_pdk(function: Callable):
     function = opt(
         "--pdk-family",
         "--pdk",
+        "pdk_selector",
         cls=PDKOption,
         required=True,
         envvar=["PDK_FAMILY", "PDK"],
-        help="A valid PDK family or variant (the latter of which is resolved to a family). If the environment PDK_FAMILY or PDK are set, they are used as secondary sources for this value.",
+        help="A valid PDK family or variant. If the environment PDK_FAMILY or PDK are set, they are used as secondary sources for this value.",
     )(function)
     function = opt(
         "--pdk-root",
