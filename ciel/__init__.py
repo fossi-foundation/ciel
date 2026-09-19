@@ -28,6 +28,7 @@ from .families import (
     Family,
     resolve_pdk_family,
     resolve_pdk_variant,
+    resolve_pdk_variants,
 )
 from .github import (
     GitHubSession,
@@ -47,4 +48,5 @@ __all__ = [
     "get_ciel_home",
     "resolve_pdk_family",
     "resolve_pdk_variant",
+    "resolve_pdk_variants",
 ]

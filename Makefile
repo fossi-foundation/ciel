@@ -12,6 +12,11 @@ lint: venv/manifest.txt
 	./venv/bin/ruff format --check .
 	./venv/bin/ruff check
 	./venv/bin/mypy --check-untyped-defs .
+	
+.PHONY: format
+format:
+	./venv/bin/ruff format .
+	./venv/bin/ruff check --fix .
 
 venv: venv/manifest.txt
 venv/manifest.txt: ./pyproject.toml

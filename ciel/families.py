@@ -17,7 +17,18 @@
 # limitations under the License.
 import fnmatch
 from dataclasses import dataclass
-from typing import Iterable, List, Dict, Optional, Set, ClassVar, Tuple
+from typing import (
+    Iterable,
+    List,
+    Dict,
+    Literal,
+    Optional,
+    Set,
+    ClassVar,
+    Tuple,
+    Union,
+    overload,
+)
 
 from .github import RepoInfo, opdks_repo, ihp_repo
 
@@ -212,12 +223,35 @@ def resolve_pdk_family(selector: str):
     raise ValueError(f"'{selector}' is not a valid PDK family or variant.")
 
 
-def resolve_pdk_variant(selector: Optional[str]):
+@overload
+def resolve_pdk_variants(
+    selector: str,
+) -> Union[str, Literal["*"]]: ...
+
+
+@overload
+def resolve_pdk_variants(
+    selector: Union[str, None],
+) -> Union[str, None, Literal["*"]]: ...
+
+
+@overload
+def resolve_pdk_variants(
+    selector: Union[str, None], *, _single_variant: Literal[True]
+) -> Union[str, None]: ...
+
+
+def resolve_pdk_variants(
+    selector: Optional[str], *, _single_variant: bool = False
+) -> Union[None, str, Literal["*"]]:
     """
+    Resolves what PDK variants are to be processed or fetched for a selector
+    string.
+
     :returns:
         If selector is a valid PDK variant, the same string.
 
-        If selector is a valid PDK family, a wildcard "*".
+        If selector is a valid PDK family, the literal string "*".
 
         If selector is None, the function will simply return None.
 
@@ -229,11 +263,39 @@ def resolve_pdk_variant(selector: Optional[str]):
     if selector in Family.by_variant:
         return str(selector)
 
-    if Family.by_name.get(selector):
-        return "*"
+    if family := Family.by_name.get(selector):
+        return family.default_variant if _single_variant else "*"
 
     raise ValueError(f"'{selector}' is not a valid PDK family or variant.")
 
 
+@overload
+def resolve_pdk_variant(
+    selector: str,
+) -> str: ...
+
+
+@overload
+def resolve_pdk_variant(
+    selector: Optional[str],
+) -> Optional[str]: ...
+
+
+def resolve_pdk_variant(selector: Optional[str]) -> Union[None, str]:
+    """
+    Resolves what single PDK variant a selector corresponds to.
+
+    :returns:
+        If selector is a valid PDK variant, the same string.
+
+        If selector is a valid PDK family, the default variant for said family.
+
+        If selector is None, the function will simply return None.
+
+        If the selector is invalid, a ValueError will be raised.
+    """
+    return resolve_pdk_variants(selector, _single_variant=True)
+
+
 def resolve_pdk_selector(selector: str) -> Tuple[str, str]:
-    return (resolve_pdk_family(selector), resolve_pdk_variant(selector))
+    return (resolve_pdk_family(selector), resolve_pdk_variants(selector))
