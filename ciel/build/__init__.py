@@ -151,7 +151,9 @@ def push(
     console = Console()
 
     if push_libraries is None or len(push_libraries) == 0:
-        push_libraries = pdk_family.all_libraries
+        push_libraries = []
+        for libs in pdk_family.all_libraries.values():
+            push_libraries.extend(libs)
     library_list = set(push_libraries)
 
     version_object = Version(version, pdk_family_name)
