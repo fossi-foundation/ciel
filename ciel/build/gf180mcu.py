@@ -113,6 +113,7 @@ LIB_FLAG_MAP = {
     "gf180mcu_re_efuse": "--enable-re-efuse-gf180mcu",
     "gf180mcu_ocd_io": "--enable-ocd-io-gf180mcu",
     "gf180mcu_ocd_ip_sram": "--enable-ocd-sram-gf180mcu",
+    "gf180mcu_ocd_sc_rt12t3v3": "--enable-ocd-sc-gf180mcu",
     "gf180mcu_ocd_alpha_small": "--enable-alpha-gf180mcu",
     "gf180mcu_ocd_alpha_large": "--enable-alpha-gf180mcu",
     "gf180mcu_ocd_alpha_misc": "--enable-alpha-gf180mcu",

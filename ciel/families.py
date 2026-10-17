@@ -149,6 +149,7 @@ Family(
             "gf180mcu_re_efuse",
             "gf180mcu_ocd_io",
             "gf180mcu_ocd_ip_sram",
+            "gf180mcu_ocd_sc_rt12t3v3",
             "gf180mcu_ocd_alpha_small",
             "gf180mcu_ocd_alpha_large",
             "gf180mcu_ocd_alpha_misc",
