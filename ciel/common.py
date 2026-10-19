@@ -17,10 +17,10 @@
 # limitations under the License.
 import os
 import shutil
-from pathlib import Path
-from datetime import datetime
 from dataclasses import dataclass
-from typing import Optional, List
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import List, Optional
 
 from .families import Family
 
@@ -33,7 +33,7 @@ def date_to_iso8601(date: datetime) -> str:
 
 
 def date_from_iso8601(string: str) -> datetime:
-    return datetime.strptime(string, ISO8601_FMT)
+    return datetime.strptime(string, ISO8601_FMT).replace(tzinfo=timezone.utc)
 
 
 def mkdirp(path):
@@ -82,7 +82,8 @@ class Version:
     prerelease: bool = False
 
     def __lt__(self, rhs: "Version"):
-        return (self.commit_date or datetime.min) < (rhs.commit_date or datetime.min)
+        epoch = datetime.min.replace(tzinfo=timezone.utc)
+        return (self.commit_date or epoch) < (rhs.commit_date or epoch)
 
     def __str__(self) -> str:
         return self.name

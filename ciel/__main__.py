@@ -15,37 +15,37 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import sys
 import json
 import shutil
+import sys
 
-import httpx
 import click
+import httpx
 from rich.console import Console
 
 from .__version__ import __version__
-from .common import (
-    Version,
-    get_ciel_home,
-)
-from .click_common import (
-    opt_pdk,
-    arg_version,
-)
-from .manage import (
-    print_installed_list,
-    print_remote_list,
-    enable,
-    fetch,
-    optimize,
-)
 from .build import (
     build_cmd,
     push_cmd,
 )
-from .github import opt_github_token
-from .source import opt_data_source
+from .click_common import (
+    arg_version,
+    opt_pdk,
+)
+from .common import (
+    Version,
+    get_ciel_home,
+)
 from .families import Family, resolve_pdk_family
+from .github import opt_github_token
+from .manage import (
+    enable,
+    fetch,
+    optimize,
+    print_installed_list,
+    print_remote_list,
+)
+from .source import opt_data_source
 
 
 @click.command("output")

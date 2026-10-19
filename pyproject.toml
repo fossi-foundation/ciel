@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "ciel"
-version = "3.1.0"
+version = "3.2.0"
 description = "An PDK builder/version manager for PDKs in the open_pdks format"
 authors = ["Mohamed Gaber <me@donn.website>", "Efabless Corporation"]
 readme = "Readme.md"
@@ -45,14 +45,10 @@ target-version = "py38"
 
 [tool.ruff.lint]
 ignore = [
-    # We sort imports vaguely by length
-    "I",
     # See GitHub issue #131
     "BLE001",
     # Will need to update like 80 billion annotations
     "FA100", 
     # ihp-sg13 is an invalid module name
     "N999",
-    # Noisy
-    "DTZ"
 ]

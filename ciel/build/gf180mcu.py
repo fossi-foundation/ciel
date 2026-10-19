@@ -15,31 +15,31 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
 import io
-import sys
 import json
+import os
 import shlex
 import shutil
 import subprocess
-from datetime import datetime
-from typing import Optional, List, Tuple, Dict
+import sys
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
+from typing import Dict, List, Optional, Tuple
 
 import pcpp
 from rich.console import Console
 from rich.progress import Progress
 
-from .git_multi_clone import GitMultiClone
-from .common import patch_open_pdks
-from ..families import Family
-from ..github import opdks_repo
 from ..common import (
     Version,
     get_ciel_dir,
     mkdirp,
 )
+from ..families import Family
+from .common import install_build, patch_open_pdks
+from .git_multi_clone import GitMultiClone
 
+FAMILY_INFO = Family.by_name["gf180mcu"]
 MAGIC_DEFAULT_TAG = "085131b090cb511d785baf52a10cf6df8a657d44"
 
 
@@ -58,7 +58,7 @@ def get_open_pdks(
                 open_pdks_future = executor.submit(
                     GitMultiClone.clone,
                     gmc,
-                    opdks_repo.link,
+                    FAMILY_INFO.repo.link,
                     version,
                     default_branch="main",
                 )
@@ -220,9 +220,7 @@ def install_gf180mcu(build_directory, pdk_root, version):
         console.log("Copying…")
         mkdirp(version_directory)
 
-        gf180mcu_family = Family.by_name["gf180mcu"]
-
-        for variant in gf180mcu_family.variants:
+        for variant in FAMILY_INFO.variants:
             variant_build_path = os.path.join(build_directory, variant)
             variant_install_path = os.path.join(version_directory, variant)
             if os.path.isdir(variant_build_path):
@@ -246,7 +244,7 @@ def build(
     if using_repos is None:
         using_repos = {}
 
-    timestamp = datetime.now().strftime("build_gf180mcu-%Y-%m-%d-%H-%M-%S")
+    timestamp = datetime.now(timezone.utc).strftime("build_gf180mcu-%Y-%m-%d-%H-%M-%S")
     build_directory = os.path.join(get_ciel_dir(pdk_root, "gf180mcu"), "build", version)
     log_dir = os.path.join(build_directory, "logs", timestamp)
     mkdirp(log_dir)
@@ -271,7 +269,7 @@ def build(
         log_dir,
         jobs,
     )
-    install_gf180mcu(build_directory, pdk_root, version)
+    install_build(console, FAMILY_INFO, build_directory, pdk_root, version)
 
     if clear_build_artifacts:
         shutil.rmtree(build_directory)

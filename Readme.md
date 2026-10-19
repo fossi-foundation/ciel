@@ -42,23 +42,30 @@ ciel --version
 ```
 
 # About the builds
-In its current inception, ciel supports builds of **sky130** and **gf180mcu** PDKs using [Open-PDKs](https://github.com/rtimothyedwards/open_pdks), including the following libraries:
 
-|sky130|gf180mcu|ihp-sg13|
-|-|-|-|
-|sky130_fd_io|gf180mcu_fd_io|sg13g2_io|
-|sky130_fd_pr|gf180mcu_fd_pr|sg13g2_pr|
-|sky130_fd_pr_reram|-|-|
-|sky130_fd_sc_hd|gf180mcu_fd_sc_mcu7t5v0|sg13g2_stdcell|
-|sky130_ml_xx_hd|gf180mcu_fd_sc_mcu9t5v0|-|
-|sky130_fd_sc_hvl|gf180mcu_osu_sc_gp9t3v3|-|
-|sky130_fd_sc_lp|gf180mcu_osu_sc_gp12t3v3|-|
-|sky130_fd_sc_ls|-|-|
-|sky130_fd_sc_ms|-|-|
-|sky130_fd_sc_hs|-|-|
-|sky130_sram_macros|gf180mcu_fd_ip_sram|sg13g2_sram|
+Ciel aims to support all kinds of open-source process design kits, so long
+as they are laid out in the
+[Open PDKs](https://github.com/fossi-foundation/open_pdks) format. Some PDKs
+do not come in this format by default, so build scripts are added to `open_pdks`
+to bring them into conformity, in which case open_pdks is transitively
+responsible for their provenance (i.e. the versions of the PDK are identified
+by the Open PDKs hash.)
 
-Builds for sky130 and gf180mcu are identified by their [**open_pdks**](https://github.com/rtimothyedwards/open_pdks) commit hashes. Builds for ihp-sg13g2 are identified by their [**IHP-Open-PDK**](https://github.com/ihp-gmbh/ihp-open-pdk) commit hashes.
+This section lists supported PDKs and their internal names:
+
+* Manufacturable (AMS)
+    * [Google/SkyWater (130nm) Open Source PDK](https://github.com/fossi-foundation/skywater-pdk) — `sky130`
+        * Identified by [Open PDKs](https://github.com/fossi-foundation/open_pdks) hash.
+    * [Google/GlobalFoundries GF180MCU Open Source PDK](https://github.com/fossi-foundation/gf180mcu-pdk) - `gf180mcu`
+        * Identified by [Open PDKs](https://github.com/fossi-foundation/open_pdks) hash.
+    * [IHP (130nm) Open Source PDK](https://github.com/IHP-GmbH/IHP-Open-PDK) - `ihp-sg13`
+        * Identified by upstream repo hash, which is already in the Open PDKs
+          format.
+* Predictive/Academic
+    * [FreePDK45](https://github.com/rjordans/freepdk45-open-pdks)
+        * Identified by hash in [Roel Jordans](https://github.com)' repo, who
+          collected the various disparate files and added LibreLane
+          configuration.
 
 # Usage
 Ciel requires a so-called **PDK Root**. This PDK root can be anywhere on your computer, but by default it's the folder `~/.ciel` in your home directory. If you have the variable `PDK_ROOT` set, ciel will use that instead. You can also manually override both values by supplying the `--pdk-root` commandline argument.

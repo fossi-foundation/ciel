@@ -18,19 +18,19 @@
 import fnmatch
 from dataclasses import dataclass
 from typing import (
+    ClassVar,
+    Dict,
     Iterable,
     List,
-    Dict,
     Literal,
     Optional,
     Set,
-    ClassVar,
     Tuple,
     Union,
     overload,
 )
 
-from .github import RepoInfo, opdks_repo, ihp_repo
+from .github import RepoInfo, freepdk45_repo, ihp_repo, opdks_repo
 
 
 @dataclass
@@ -50,7 +50,7 @@ class Family:
         if self.default_variant is None:
             self.default_variant = self.variants[0]
         if self.default_includes is None:
-            self.default_includes = {"*": self.all_libraries.copy()}
+            self.default_includes = self.all_libraries.copy()
 
         Family.by_name[self.name] = self
         for variant in self.variants:
@@ -62,7 +62,7 @@ class Family:
     ) -> Set[str]:
         final_set: Set[str] = set()
         for pattern, libraries in self.all_libraries.items():
-            if variant == "*" or fnmatch.fnmatch(variant, pattern):
+            if fnmatch.fnmatch(variant, pattern):
                 final_set = final_set.union(libraries)
         return final_set
 
@@ -197,6 +197,15 @@ Family(
         ],
     },
     repo=ihp_repo,
+)
+
+Family(
+    name="freepdk45",
+    variants=["freepdk45"],
+    all_libraries={
+        "*": ["nangate45", "fakeram45"],
+    },
+    repo=freepdk45_repo,
 )
 
 
