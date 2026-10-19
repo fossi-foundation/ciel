@@ -69,7 +69,7 @@ def print_installed_list(
                 installed.commit_date = remote_version.commit_date
                 installed.upload_date = remote_version.upload_date
         versions.sort(reverse=True)
-    except httpx.HTTPError:
+    except (ValueError, httpx.HTTPError):
         console.print(
             "[red]Failed to connect to GitHub. Date information may be unavailable."
         )
@@ -158,7 +158,6 @@ def fetch(
     if not os.path.isdir(libs_tech):
         common_missing = True
 
-    print(library_set)
     for library in library_set:
         if library not in pdk_family.get_all_libraries(pdk_variant_name):
             raise RuntimeError(f"Unknown library {library}.")

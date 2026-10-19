@@ -62,7 +62,7 @@ class Family:
     ) -> Set[str]:
         final_set: Set[str] = set()
         for pattern, libraries in self.all_libraries.items():
-            if fnmatch.fnmatch(variant, pattern):
+            if fnmatch.fnmatch(variant, pattern) or fnmatch.fnmatch(pattern, variant):
                 final_set = final_set.union(libraries)
         return final_set
 

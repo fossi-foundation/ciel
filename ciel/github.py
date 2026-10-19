@@ -174,7 +174,6 @@ def get_commit_date(
         return None
 
     date = response["commit"]["author"]["date"]
-    print(date)
     commit_date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").replace(
         tzinfo=timezone.utc
     )
