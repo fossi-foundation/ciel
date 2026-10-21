@@ -218,7 +218,7 @@ def fetch(
 
                 with console.status(f"Unpacking {asset.filename}…"):
                     stream = zstd.open(tarball_path, mode="rb")
-                    with tarfile.TarFile(fileobj=stream, mode="r") as tf:
+                    with stream, tarfile.TarFile(fileobj=stream, mode="r") as tf:
                         for file in tf:
                             if file.isdir():
                                 continue
