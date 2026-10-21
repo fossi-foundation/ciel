@@ -15,29 +15,29 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import hashlib
 import io
 import os
 import shutil
-import hashlib
 import tarfile
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Union, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
-import rich
 import httpx
-import rich.tree
+import rich
 import rich.progress
+import rich.tree
 import zstandard as zstd
 from rich.console import Console
 
+from .build import build
 from .build.git_multi_clone import mkdirp
 from .common import (
     Version,
-    get_versions_dir,
     get_ciel_dir,
+    get_versions_dir,
 )
-from .build import build
 from .families import Family, resolve_pdk_selector
 from .source import DataSource
 
@@ -69,7 +69,7 @@ def print_installed_list(
                 installed.commit_date = remote_version.commit_date
                 installed.upload_date = remote_version.upload_date
         versions.sort(reverse=True)
-    except httpx.HTTPError:
+    except (ValueError, httpx.HTTPError):
         console.print(
             "[red]Failed to connect to GitHub. Date information may be unavailable."
         )

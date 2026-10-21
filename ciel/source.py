@@ -18,14 +18,14 @@
 import re
 import sys
 from dataclasses import dataclass
-from typing import Dict, ClassVar, List, Tuple, Type, Callable
+from typing import Callable, ClassVar, Dict, List, Tuple, Type
 
 import click
 import httpx
 
-from .github import GitHubSession, RepoInfo
 from .common import Version, date_from_iso8601
 from .families import Family
+from .github import GitHubSession, RepoInfo
 
 
 @dataclass

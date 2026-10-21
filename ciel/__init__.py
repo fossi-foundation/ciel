@@ -15,14 +15,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from .manage import (
-    VersionNotFound,
-    enable,
-    fetch,
-)
+from .__version__ import __version__
+from .build import build
 from .common import (
-    get_ciel_home,
     Version,
+    get_ciel_home,
 )
 from .families import (
     Family,
@@ -33,8 +30,11 @@ from .families import (
 from .github import (
     GitHubSession,
 )
-from .build import build
-from .__version__ import __version__
+from .manage import (
+    VersionNotFound,
+    enable,
+    fetch,
+)
 
 __all__ = [
     "Family",

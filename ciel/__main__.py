@@ -15,37 +15,37 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import sys
 import json
 import shutil
+import sys
 
-import httpx
 import click
+import httpx
 from rich.console import Console
 
 from .__version__ import __version__
-from .common import (
-    Version,
-    get_ciel_home,
-)
-from .click_common import (
-    opt_pdk,
-    arg_version,
-)
-from .manage import (
-    print_installed_list,
-    print_remote_list,
-    enable,
-    fetch,
-    optimize,
-)
 from .build import (
     build_cmd,
     push_cmd,
 )
+from .click_common import (
+    arg_version,
+    opt_pdk,
+)
+from .common import (
+    Version,
+    get_ciel_home,
+)
+from .families import Family, resolve_pdk_family, resolve_pdk_selector
 from .github import opt_github_token
+from .manage import (
+    enable,
+    fetch,
+    optimize,
+    print_installed_list,
+    print_remote_list,
+)
 from .source import opt_data_source
-from .families import Family, resolve_pdk_family
 
 
 @click.command("output")
@@ -348,6 +348,58 @@ def list_pdks_cmd():
         print(json.dumps(result), end="")
 
 
+@click.command("ls-libs")
+@opt_pdk
+def list_libs_cmd(pdk_root, pdk_selector):
+    """Lists all libraries for a given PDK family or variant."""
+    family_name, variants = resolve_pdk_selector(pdk_selector)
+    family = Family.by_name[family_name]
+    for lib in sorted(family.resolve_libraries(("all",), variants)):
+        print(f"{lib}")
+
+
+@click.command("_update_readme_lib_table", hidden=True)
+@click.argument("readme", type=click.Path(exists=True, file_okay=True, writable=True))
+def update_readme_lib_table_cmd(readme):
+    # internal command - behavior may change or command may be removed in any
+    # version
+    import fileinput
+    import html
+
+    table = [
+        (name, sorted(f.get_all_libraries("*"))) for name, f in Family.by_name.items()
+    ]
+    row_count = max(len(scls) for _, scls in table)
+
+    with fileinput.input(readme, inplace=True) as f:
+        skip = False
+        for line in f:
+            if "<!-- END LIBRARIES -->" in line:
+                skip = False
+            if not skip:
+                print(line, end="")
+            if "<!-- START LIBRARIES -->" in line:
+                skip = True
+                print("<table>")
+                print("<tr>")
+                for name, _ in table:
+                    print(f"<th>{html.escape(name)}</th>")
+                print("</tr>")
+                for i in range(row_count):
+                    print("<tr>")
+                    for _, rows in table:
+                        cell = "-"
+                        try:
+                            cell = rows[i]
+                        except IndexError:
+                            pass
+                        print(f"<td>{html.escape(cell)}</td>")
+                    print("</tr>")
+
+                print("</tr>")
+                print("</table>")
+
+
 @click.group(
     context_settings={
         "max_content_width": max(shutil.get_terminal_size().columns, 80),
@@ -386,6 +438,8 @@ cli.add_command(list_remote_cmd)
 cli.add_command(enable_cmd)
 cli.add_command(fetch_cmd)
 cli.add_command(list_pdks_cmd)
+cli.add_command(list_libs_cmd)
+cli.add_command(update_readme_lib_table_cmd)
 
 try:
     import ssl  # noqa: F401

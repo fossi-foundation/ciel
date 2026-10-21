@@ -16,15 +16,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import sys
-import click
-import subprocess
-from datetime import datetime
-from dataclasses import dataclass
-from typing import Any, ClassVar, Optional, Callable
-
-import httpx
 import ssl
+import subprocess
+import sys
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from typing import Any, Callable, ClassVar, Optional
+
+import click
+import httpx
+
 from .__version__ import __version__
 
 
@@ -58,6 +59,11 @@ opdks_repo = RepoInfo(
 ihp_repo = RepoInfo(
     os.getenv("IHP_REPO_OWNER", "IHP-GmbH"),
     os.getenv("IHP_REPO_NAME", "IHP-Open-PDK"),
+)
+
+freepdk45_repo = RepoInfo(
+    os.getenv("IHP_REPO_OWNER", "rjordans"),
+    os.getenv("IHP_REPO_NAME", "freepdk45-open-pdks"),
 )
 
 
@@ -168,8 +174,9 @@ def get_commit_date(
         return None
 
     date = response["commit"]["author"]["date"]
-    print(date)
-    commit_date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
+    commit_date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").replace(
+        tzinfo=timezone.utc
+    )
     return commit_date
 
 

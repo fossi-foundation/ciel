@@ -13,11 +13,21 @@
 # limitations under the License.
 import os
 import re
-import sys
 import shutil
 import subprocess
+import sys
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+from typing import Optional, Tuple
 
-from ciel.github import GitHubSession
+from rich.progress import Progress
+
+from ..common import (
+    Version,
+    mkdirp,
+)
+from ..github import GitHubSession
+from .git_multi_clone import GitMultiClone
 
 
 def get_backup_path(at_path: str):
@@ -136,3 +146,100 @@ def patch_open_pdks(at_path: str):
     if gnu_sed_used:
         print("Patching GNU sed-only syntax in sky130 Makefile…")
         open_pdks_patch_gnu_sed(os.path.join(at_path, "sky130", "Makefile.in"))
+
+
+def fetch_sources(
+    console,
+    family,
+    build_directory,
+    version,
+    jobs=1,
+    repo_path=None,
+    default_branch="main",
+) -> Tuple[str, Optional[str], Optional[str]]:
+    try:
+        if repo_path is None:
+            with Progress() as progress, ThreadPoolExecutor(
+                max_workers=jobs
+            ) as executor:
+                gmc = GitMultiClone(build_directory, progress)
+                future = executor.submit(
+                    GitMultiClone.clone,
+                    gmc,
+                    family.repo.link,
+                    version,
+                    default_branch=default_branch,
+                )
+                repo = future.result()
+                current_task = progress.add_task("Updating submodules…", total=100)
+                repo.init_submodule(
+                    callback=lambda x: progress.update(current_task, completed=x)
+                )
+                repo_path = repo.path
+            console.log(f"Done fetching {family.name}.")
+        else:
+            console.log(f"Using {family.name} at {repo_path} unaltered.")
+
+        return repo_path
+
+    except subprocess.CalledProcessError as e:
+        print(e)
+        print(e.stderr)
+        sys.exit(-1)
+
+
+def trivial_build(family, build_directory, source_path):
+    # """Build"""
+    def filter(dir_s, files):
+        dir = Path(dir_s)
+        if dir.name == ".git":
+            return files
+        rejects = [".git", ".DS_Store"]
+        for file in files:
+            # ignore bad symlinks
+            if not (Path(dir) / file).resolve().exists():
+                rejects.append(file)
+        return rejects
+
+    try:
+        for variant in family.variants:
+            shutil.rmtree(os.path.join(build_directory, variant))
+    except FileNotFoundError:
+        pass
+    for variant in family.variants:
+        shutil.copytree(
+            os.path.join(source_path, variant),
+            os.path.join(build_directory, variant),
+            ignore=filter,
+        )
+
+
+def install_build(console, family, build_directory, pdk_root, version):
+    with console.status("Adding build to list of installed versions…"):
+        version_directory = Version(version, family.name).get_dir(pdk_root)
+        if (
+            os.path.exists(version_directory)
+            and len(os.listdir(version_directory)) != 0
+        ):
+            backup_path = version_directory
+            it = 0
+            while os.path.exists(backup_path) and len(os.listdir(backup_path)) != 0:
+                it += 1
+                backup_path = Version(f"{version}.bk{it}", family.name).get_dir(
+                    pdk_root
+                )
+            console.log(
+                f"Build already found at {version_directory}, moving to {backup_path}…"
+            )
+            shutil.move(version_directory, backup_path)
+
+        console.log("Copying…")
+        mkdirp(version_directory)
+
+        for variant in family.variants:
+            variant_build_path = os.path.join(build_directory, variant)
+            variant_install_path = os.path.join(version_directory, variant)
+            if os.path.isdir(variant_build_path):
+                shutil.copytree(variant_build_path, variant_install_path)
+
+    console.log("Done.")
