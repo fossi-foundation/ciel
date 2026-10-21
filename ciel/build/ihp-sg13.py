@@ -29,7 +29,7 @@ from ..common import (
 from ..families import Family
 from .common import fetch_sources, install_build, trivial_build
 
-FAMILY_INFO = Family.by_name["freepdk45"]
+FAMILY_INFO = Family.by_name["ihp-sg13"]
 
 
 def build(

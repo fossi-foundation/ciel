@@ -72,7 +72,7 @@ class Family:
     ) -> Set[str]:
         final_set: Set[str] = set()
         for pattern, includes in self.default_includes.items():
-            if variant == "*" or fnmatch.fnmatch(variant, pattern):
+            if fnmatch.fnmatch(variant, pattern) or fnmatch.fnmatch(pattern, variant):
                 final_set = final_set.union(includes)
         return final_set
 

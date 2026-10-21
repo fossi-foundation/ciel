@@ -51,7 +51,8 @@ to bring them into conformity, in which case open_pdks is transitively
 responsible for their provenance (i.e. the versions of the PDK are identified
 by the Open PDKs hash.)
 
-This section lists supported PDKs and their internal names:
+This section lists supported PDKs and their identifiers: (You can list
+supported standard cell libraries by using `ciel ls-libs --pdk <identifier>`)
 
 * Manufacturable (AMS)
     * [Google/SkyWater (130nm) Open Source PDK](https://github.com/fossi-foundation/skywater-pdk) — `sky130`
@@ -62,10 +63,117 @@ This section lists supported PDKs and their internal names:
         * Identified by upstream repo hash, which is already in the Open PDKs
           format.
 * Predictive/Academic
-    * [FreePDK45](https://github.com/rjordans/freepdk45-open-pdks)
-        * Identified by hash in [Roel Jordans](https://github.com)' repo, who
-          collected the various disparate files and added LibreLane
-          configuration.
+    * [FreePDK45](https://github.com/rjordans/freepdk45-open-pdks) - `freepdk45`
+        * Identified by hash in [Roel Jordans](https://github.com/rjordans)'
+          repo which lays it out in the Open PDKs format and adds LibreLane
+          support.
+        * Originally developed by NCSU - ([src](https://eda.ncsu.edu/freepdk/freepdk45/))
+
+## Included libraries
+
+<!-- Regenerate library list using `python3 -m ciel _update_readme_lib_table Readme.md` -->
+
+<!-- START LIBRARIES -->
+<table>
+<tr>
+<th>sky130</th>
+<th>gf180mcu</th>
+<th>ihp-sg13</th>
+<th>freepdk45</th>
+</tr>
+<tr>
+<td>sky130_fd_io</td>
+<td>gf180mcu_as_sc_mcu7t3v3</td>
+<td>sg13cmos5l_io</td>
+<td>fakeram45</td>
+</tr>
+<tr>
+<td>sky130_fd_pr</td>
+<td>gf180mcu_fd_io</td>
+<td>sg13cmos5l_sram</td>
+<td>nangate45</td>
+</tr>
+<tr>
+<td>sky130_fd_pr_reram</td>
+<td>gf180mcu_fd_ip_sram</td>
+<td>sg13cmos5l_stdcell</td>
+<td>-</td>
+</tr>
+<tr>
+<td>sky130_fd_sc_hd</td>
+<td>gf180mcu_fd_pr</td>
+<td>sg13g2_io</td>
+<td>-</td>
+</tr>
+<tr>
+<td>sky130_fd_sc_hdll</td>
+<td>gf180mcu_fd_sc_mcu7t5v0</td>
+<td>sg13g2_pr</td>
+<td>-</td>
+</tr>
+<tr>
+<td>sky130_fd_sc_hs</td>
+<td>gf180mcu_fd_sc_mcu9t5v0</td>
+<td>sg13g2_sram</td>
+<td>-</td>
+</tr>
+<tr>
+<td>sky130_fd_sc_hvl</td>
+<td>gf180mcu_ocd_alpha_large</td>
+<td>sg13g2_stdcell</td>
+<td>-</td>
+</tr>
+<tr>
+<td>sky130_fd_sc_lp</td>
+<td>gf180mcu_ocd_alpha_misc</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>sky130_fd_sc_ls</td>
+<td>gf180mcu_ocd_alpha_small</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>sky130_fd_sc_ms</td>
+<td>gf180mcu_ocd_io</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>sky130_ml_xx_hd</td>
+<td>gf180mcu_ocd_ip_sram</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>sky130_sram_macros</td>
+<td>gf180mcu_ocd_sc_rt12t3v3</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>-</td>
+<td>gf180mcu_osu_sc_gp12t3v3</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>-</td>
+<td>gf180mcu_osu_sc_gp9t3v3</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>-</td>
+<td>gf180mcu_re_efuse</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tr>
+</table>
+<!-- END LIBRARIES -->
 
 # Usage
 Ciel requires a so-called **PDK Root**. This PDK root can be anywhere on your computer, but by default it's the folder `~/.ciel` in your home directory. If you have the variable `PDK_ROOT` set, ciel will use that instead. You can also manually override both values by supplying the `--pdk-root` commandline argument.
