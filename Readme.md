@@ -228,7 +228,7 @@ PDK version 7519dfb04400f224f140749cda44ee7de6f5e095 enabled.
 ## Building PDKs
 For special cases, you may have to build the PDK yourself, which Ciel does support.
 
-You'll need Magic installed and in PATH. You can either do that manually or, if you have [Nix](https://nixos.org), invoke `nix shell github:fossi-foundation/nix-eda#magic` before building.
+You'll need [Magic](https://github.com/rtimothyedwards/magic) installed and in PATH. `python3 -m pip install git+https://github.com/rtimothyedwards/magic@8.3.706` is sufficient.
 
 You can invoke `ciel build --help` for more options. Be aware, the built PDK won't automatically be enabled and you'll have to `ciel enable` the appropriate version.
 
