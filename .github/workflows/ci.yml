@@ -73,8 +73,10 @@ jobs:
       - name: Ensure PDK downloads work
         shell: bash
         run: |
+          set -e -x
           for pdk in $(python3 -m ciel ls-pdks | jq -r 'keys[]' | tr '\n' ' '); do
             version="$(python3 -m ciel ls-remote --pdk $pdk | head -n1)"
+            if [ -z "$version" ]; then echo "Failed to get version" > /dev/stderr; exit 1; fi
             python3 -m ciel fetch --pdk $pdk $version
             python3 -m ciel prune --pdk $pdk --yes
           done
