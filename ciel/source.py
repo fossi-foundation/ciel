@@ -21,11 +21,11 @@ from dataclasses import dataclass
 from typing import Callable, ClassVar, Dict, List, Tuple, Type
 
 import click
-import httpx
 
 from .common import Version, date_from_iso8601
 from .families import Family
 from .github import GitHubSession, RepoInfo
+from .httpx import Client, HTTPStatusError, Response
 
 
 @dataclass
@@ -45,9 +45,7 @@ class DataSource:
     def get_available_versions(self, pdk: str) -> List[Version]:
         raise NotImplementedError()
 
-    def get_downloads_for_version(
-        self, version: Version
-    ) -> Tuple[httpx.Client, List[Asset]]:
+    def get_downloads_for_version(self, version: Version) -> Tuple[Client, List[Asset]]:
         raise NotImplementedError()
 
 
@@ -113,10 +111,8 @@ class GitHubReleasesDataSource(DataSource):
             )
         return versions
 
-    def get_downloads_for_version(
-        self, version: Version
-    ) -> Tuple[httpx.Client, List[Asset]]:
-        family_res: httpx.Response = self.session.api(
+    def get_downloads_for_version(self, version: Version) -> Tuple[Client, List[Asset]]:
+        family_res: Response = self.session.api(
             self.repo,
             f"/releases/tags/{version.pdk}-{version.name}",
             "get",
@@ -129,7 +125,7 @@ class GitHubReleasesDataSource(DataSource):
             # try variants because ihp was renamed (grumble)
             variants = Family.by_name[version.pdk].variants
             for variant in variants:
-                variant_res: httpx.Response = self.session.api(
+                variant_res: Response = self.session.api(
                     self.repo,
                     f"/releases/tags/{variant}-{version.name}",
                     "get",
@@ -165,7 +161,7 @@ class StaticWebDataSource(DataSource):
         req = self.session.request("GET", self.base_url + f"/{pdk}/manifest.json")
         try:
             req.raise_for_status()
-        except httpx.HTTPStatusError as e:
+        except HTTPStatusError as e:
             if e.response.status_code == 404:
                 raise ValueError(
                     f"No versions found for '{pdk}' at '{self.base_url}'"
@@ -192,15 +188,13 @@ class StaticWebDataSource(DataSource):
             raise ValueError(f"No versions found for '{pdk}' on '{self.base_url}'")
         return versions
 
-    def get_downloads_for_version(
-        self, version: Version
-    ) -> Tuple[httpx.Client, List[Asset]]:
+    def get_downloads_for_version(self, version: Version) -> Tuple[Client, List[Asset]]:
         req = self.session.request(
             "GET", self.base_url + f"/{version.pdk}/{version.name}/manifest.json"
         )
         try:
             req.raise_for_status()
-        except httpx.HTTPStatusError as e:
+        except HTTPStatusError as e:
             if e.response.status_code == 404:
                 raise ValueError(
                     f"Manifest for '{version.pdk}/{version.name}' at '{self.base_url}'"

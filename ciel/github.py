@@ -24,9 +24,9 @@ from datetime import datetime, timezone
 from typing import Any, Callable, ClassVar, Optional
 
 import click
-import httpx
 
 from .__version__ import __version__
+from .httpx import Client, Headers, HTTPError
 
 
 @dataclass
@@ -67,7 +67,7 @@ freepdk45_repo = RepoInfo(
 )
 
 
-class GitHubSession(httpx.Client):
+class GitHubSession(Client):
     class Token:
         override: ClassVar[Optional[str]] = None
 
@@ -105,7 +105,7 @@ class GitHubSession(httpx.Client):
     ):
         if ssl_context is None:
             try:
-                import truststore
+                import truststore  # noqa: PLC0415
 
                 ssl_context = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
             except ImportError:
@@ -134,7 +134,7 @@ class GitHubSession(httpx.Client):
         }
         if github_token is not None:
             raw_headers["Authorization"] = f"Bearer {github_token}"
-        self.headers = httpx.Headers(raw_headers)
+        self.headers = Headers(raw_headers)
 
     def api(
         self,
@@ -170,7 +170,7 @@ def get_commit_date(
 
     try:
         response = session.api(repo, f"/commits/{commit}", "get")
-    except httpx.HTTPError:
+    except HTTPError:
         return None
 
     date = response["commit"]["author"]["date"]

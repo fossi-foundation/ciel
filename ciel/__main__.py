@@ -20,7 +20,6 @@ import shutil
 import sys
 
 import click
-import httpx
 from rich.console import Console
 
 from .__version__ import __version__
@@ -38,6 +37,7 @@ from .common import (
 )
 from .families import Family, resolve_pdk_family, resolve_pdk_selector
 from .github import opt_github_token
+from .httpx import HTTPStatusError, NetworkError
 from .manage import (
     enable,
     fetch,
@@ -213,11 +213,11 @@ def list_remote_cmd(data_source, pdk_root, pdk_selector):
         console = Console(stderr=True)
         console.print(f"[red]{e}")
         sys.exit(-1)
-    except httpx.HTTPStatusError as e:
+    except HTTPStatusError as e:
         console = Console(stderr=True)
         console.print(f"[red]Encountered an error when polling version list: {e}")
         sys.exit(-1)
-    except httpx.NetworkError as e:
+    except NetworkError as e:
         console = Console(stderr=True)
         console.print(
             f"[red]You don't appear to be connected to the Internet. ls-remote cannot be used.: {e}"
@@ -363,8 +363,8 @@ def list_libs_cmd(pdk_root, pdk_selector):
 def update_readme_lib_table_cmd(readme):
     # internal command - behavior may change or command may be removed in any
     # version
-    import fileinput
-    import html
+    import fileinput  # noqa: PLC0415
+    import html  # noqa: PLC0415
 
     table = [
         (name, sorted(f.get_all_libraries("*"))) for name, f in Family.by_name.items()

@@ -18,7 +18,7 @@
   click,
   pyyaml,
   rich,
-  httpx,
+  httpx2,
   pcpp,
   zstandard,
   truststore,
@@ -42,12 +42,12 @@ buildPythonPackage {
       click
       pyyaml
       rich
-      httpx
+      httpx2
       pcpp
       zstandard
       truststore
     ]
-    ++ httpx.optional-dependencies.socks;
+    ++ httpx2.optional-dependencies.socks;
 
   meta = {
     mainProgram = "ciel";

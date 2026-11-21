@@ -40,7 +40,7 @@ jobs:
       - name: Check Git repository
         uses: actions/checkout@v7
       - name: Set Up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v7
         with:
           python-version: "3.8"
       - name: Build Distribution
@@ -52,13 +52,16 @@ jobs:
           path: ./dist
   test:
     name: Test
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.10", "3.12", "3.14"] 
     runs-on: ubuntu-24.04
     needs: build
     steps:
       - name: Set Up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v7
         with:
-          python-version: "3.8"
+          python-version: ${{ matrix.python-version }}
       - uses: actions/download-artifact@v8
         with:
           name: wheel
