@@ -22,6 +22,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
+import yaml
+
 from .families import Family
 
 # -- Assorted Helper Functions
@@ -168,8 +170,6 @@ def resolve_version(
     """
     if version is not None:
         return version
-
-    import yaml
 
     if tool_metadata_file_path is None:
         tool_metadata_file_path = os.path.join(".", "tool_metadata.yml")

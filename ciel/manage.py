@@ -24,7 +24,6 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
-import httpx
 import rich
 import rich.progress
 import rich.tree
@@ -39,6 +38,7 @@ from .common import (
     get_versions_dir,
 )
 from .families import Family, resolve_pdk_selector
+from .httpx import HTTPError, HTTPStatusError
 from .source import DataSource
 
 
@@ -69,7 +69,7 @@ def print_installed_list(
                 installed.commit_date = remote_version.commit_date
                 installed.upload_date = remote_version.upload_date
         versions.sort(reverse=True)
-    except (ValueError, httpx.HTTPError):
+    except (ValueError, HTTPError):
         console.print(
             "[red]Failed to connect to GitHub. Date information may be unavailable."
         )
@@ -231,7 +231,7 @@ def fetch(
                                 )
                             with open(final_path, "wb") as f:
                                 f.write(io.read())
-        except httpx.HTTPStatusError as e:
+        except HTTPStatusError as e:
             if e.response is not None and e.response.status_code == 404:
                 if not build_if_not_found:
                     raise RuntimeError(f"Version {version} not found remotely.")
@@ -244,13 +244,12 @@ def fetch(
                     version=version,
                     **(build_kwargs or {}),
                 )
+            elif e.response is not None:
+                raise RuntimeError(
+                    f"Failed to obtain {version} remotely: {e.response}."
+                )
             else:
-                if e.response is not None:
-                    raise RuntimeError(
-                        f"Failed to obtain {version} remotely: {e.response}."
-                    )
-                else:
-                    raise RuntimeError(f"Failed to request {version} from server: {e}.")
+                raise RuntimeError(f"Failed to request {version} from server: {e}.")
         except KeyboardInterrupt as e:
             console.print("Interrupted.")
             for path in affected_paths:

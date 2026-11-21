@@ -48,12 +48,11 @@ def open_pdks_fix_makefile_provenance(at_path: str):
 
     unpatched_rx = re.compile(r"[^$]\${(\w+)_COMMIT\}")
 
-    with open(backup_path, "r") as file_in, open(at_path, "w") as file_out:
-        for line in file_in:
+    with open(backup_path) as file_in, open(at_path, "w") as file_out:
+        for line_raw in file_in:
             # This patch makes it so the subshells parse this as an assignment
             # and not as a command. (a=b valid, a = b not valid)
-            if "_COMMIT = `" in line:
-                line = line.replace("_COMMIT = ", "_COMMIT=")
+            line = line_raw.replace("_COMMIT = ", "_COMMIT=")
             # This patch makes it so the _COMMIT assignment is propagated to
             # the next if block instead of the next if block being run in
             # another subshell.
@@ -76,7 +75,7 @@ def open_pdks_patch_gnu_sed(at_path: str):
     backup_path = get_backup_path(at_path)
     shutil.move(at_path, backup_path)
 
-    with open(backup_path, "r") as file_in, open(at_path, "w") as file_out:
+    with open(backup_path) as file_in, open(at_path, "w") as file_out:
         file_out.writelines(
             line.replace("${SED} -i ", "${SED} -i.bak ") for line in file_in
         )

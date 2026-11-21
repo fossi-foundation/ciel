@@ -20,7 +20,7 @@ def __get_version():
     try:
         return importlib.metadata.version(__package__ or __name__)
     except importlib.metadata.PackageNotFoundError:
-        import re
+        import re  # noqa: PLC0415
 
         rx = re.compile(r"version\s*=\s*\"([^\"]+)\"")
         repo_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
